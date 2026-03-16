@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
+  AreaChart,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Area,
 } from "recharts";
 import { formatUSD } from "../../lib/utils/money";
 
@@ -23,7 +23,7 @@ interface NetWorthChartProps {
 function formatAxisDate(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString("en-US", { month: "short", day: '2-digit', year: "2-digit" });
+  return d.toLocaleDateString("en-US", { month: "short", day: '2-digit', year: "numeric" });
 }
 
 export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthChartProps) {
@@ -39,8 +39,14 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
   }
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+    <ResponsiveContainer width="100%" height={300}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <XAxis
           dataKey="date"
           tickFormatter={formatAxisDate}
@@ -60,15 +66,16 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
           formatter={(val: unknown) => [formatUSD(val as number), label]}
           labelFormatter={(label: unknown) => formatAxisDate(label as string)}
         />
-        <Line
+        <Area
           type="monotone"
           dataKey="value"
           stroke="var(--color-yellow)"
           strokeWidth={2}
+          fill="url(#netWorthGradient)"
           dot={false}
           activeDot={{ r: 4, fill: "var(--color-yellow)" }}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
