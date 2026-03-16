@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # start dev server (localhost:3000)
+npm run dev          # start dev server (localhost:3033)
 npm run build        # production build
 npm run lint         # ESLint
 npx tsc --noEmit     # type check without building
@@ -58,7 +58,8 @@ The dashboard aggregates the `activity` collection server-side: for each calenda
 
 - `app/(auth)/` — unauthenticated pages (login)
 - `app/(app)/` — auth-gated pages with the nav shell layout
-- `app/api-doc/` — Swagger UI (public; path starts with `api` so proxy skips it)
+- `app/api-doc/` — Scalar API reference UI (public; path starts with `api` so proxy skips it); served as a route handler, not a page
+- `app/api/openapi.json/` — serves the OpenAPI spec as JSON; consumed by the Scalar UI
 - `app/api/v1/` — public REST API, gated by `X-API-Key` header
 - `app/api/keys/` — API key CRUD, gated by session cookie
 - `app/api/users/` — user CRUD, gated by session cookie; all authenticated users can manage all users

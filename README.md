@@ -27,7 +27,7 @@ export APP_PASSWORD=yourpassword
 docker compose up -d
 ```
 
-Open `http://localhost:3000` and log in with your `APP_USERNAME` / `APP_PASSWORD`.
+Open `http://localhost:3033` and log in with your `APP_USERNAME` / `APP_PASSWORD`.
 
 ```bash
 docker compose down        # stop
@@ -111,5 +111,5 @@ Key management endpoints require a logged-in browser session.
 - **Recharts** for the net worth line chart
 - **bcryptjs** + **jose** for auth
 - **Tailwind CSS v4** with CSS variables for theming
-- **next-swagger-doc** + **swagger-ui-react** for API docs
+- **next-swagger-doc** + **Scalar** for API docs
 - **Playwright** (integration) + **Jest** (unit)

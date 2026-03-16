@@ -1,6 +1,5 @@
 services:
   money-talk:
-    image: chartester/money-talk
     build:
       args:
         - MONGO_URL=${MONGO_URL}
