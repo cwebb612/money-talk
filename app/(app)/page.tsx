@@ -37,14 +37,17 @@ async function getDashboardData(userId: string) {
     let netWorth = 0;
     latestValues.forEach((value, accountId) => {
       const type = accountTypes.get(accountId);
-      netWorth += type === "liability" ? -value : value;
+      if (type === "liability") netWorth -= value;
+      else if (type != null) netWorth += value;
     });
 
     chartData.push({ date: day, value: netWorth });
   }
 
-  const currentNetWorth =
-    chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
+  const currentNetWorth = accounts.reduce(
+    (sum, a) => sum + (a.type === "liability" ? -a.currentValue : a.currentValue),
+    0
+  );
   const lastUpdated =
     activities.length > 0
       ? activities[activities.length - 1].recordedAt.toISOString()

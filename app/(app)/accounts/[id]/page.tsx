@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AccountDetail from "../../../../components/accounts/AccountDetail";
 import { AccountFormData } from "../../../../components/accounts/AccountForm";
+import Card from "../../../../components/ui/Card";
+import NetWorthChart from "../../../../components/dashboard/NetWorthChart";
 
 interface AccountData {
   _id: string;
@@ -25,7 +27,15 @@ export default function AccountDetailPage() {
   const id = params.id as string;
 
   const [account, setAccount] = useState<AccountData | null>(null);
+  const [chartData, setChartData] = useState<{ date: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
+
+  function fetchActivity() {
+    fetch(`/api/accounts/${id}/activity`)
+      .then((r) => r.json())
+      .then(setChartData)
+      .catch(() => {});
+  }
 
   useEffect(() => {
     fetch(`/api/accounts/${id}`)
@@ -35,6 +45,8 @@ export default function AccountDetailPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    fetchActivity();
   }, [id]);
 
   async function handleUpdate(data: AccountFormData) {
@@ -51,6 +63,7 @@ export default function AccountDetailPage() {
 
     const updated = await res.json();
     setAccount(updated);
+    fetchActivity();
   }
 
   if (loading) {
@@ -72,25 +85,25 @@ export default function AccountDetailPage() {
     );
   }
 
+  async function handleDelete() {
+    if (!confirm("Delete this account? This cannot be undone.")) return;
+    await fetch(`/api/accounts/${id}`, { method: "DELETE" });
+    router.push("/");
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <Link href="/" className="text-sm" style={{ color: "var(--color-muted)" }}>
           ← Dashboard
         </Link>
-        <button
-          onClick={async () => {
-            if (!confirm("Delete this account?")) return;
-            await fetch(`/api/accounts/${id}`, { method: "DELETE" });
-            router.push("/");
-          }}
-          className="text-xs"
-          style={{ color: "var(--color-muted)" }}
-        >
-          Delete
-        </button>
       </div>
-      <AccountDetail account={account} onUpdate={handleUpdate} />
+      <div className="flex flex-col gap-6">
+        <Card>
+          <NetWorthChart data={chartData} label="Value" />
+        </Card>
+        <AccountDetail account={account} onUpdate={handleUpdate} onDelete={handleDelete} />
+      </div>
     </div>
   );
 }

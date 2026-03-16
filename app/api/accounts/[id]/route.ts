@@ -50,19 +50,39 @@ export async function PUT(
 
   const body = await request.json().catch(() => ({}));
 
+  // Always update non-value metadata
   if (body.name != null) account.name = body.name;
   if (body.institutionUrl != null) account.institutionUrl = body.institutionUrl;
-  if (body.balance != null) account.balance = body.balance;
-  if (body.holdings != null) account.holdings = body.holdings;
 
-  account.currentValue = calculateAccountValue(account);
+  const submittedRecordedAt = body.recordedAt ? new Date(body.recordedAt) : new Date();
+
+  // Calculate the value for the submitted balance/holdings (used for the activity entry)
+  const submittedValue = calculateAccountValue({
+    type: account.type,
+    balance: body.balance ?? account.balance,
+    holdings: body.holdings ?? account.holdings,
+  });
+
+  // Only update balance/holdings/currentValue if this is the most recent entry
+  const mostRecentActivity = await Activity.findOne({ accountId: account._id })
+    .sort({ recordedAt: -1 })
+    .lean();
+
+  const isLatest = !mostRecentActivity || submittedRecordedAt >= mostRecentActivity.recordedAt;
+
+  if (isLatest) {
+    if (body.balance != null) account.balance = body.balance;
+    if (body.holdings != null) account.holdings = body.holdings;
+    account.currentValue = submittedValue;
+  }
+
   await account.save();
 
   await Activity.create({
     accountId: account._id,
     userId: new Types.ObjectId(userId),
-    value: account.currentValue,
-    recordedAt: new Date(),
+    value: submittedValue,
+    recordedAt: submittedRecordedAt,
   });
 
   return NextResponse.json({ ...account.toObject(), _id: account._id.toString(), userId: account.userId.toString() });

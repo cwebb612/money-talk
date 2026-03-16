@@ -17,14 +17,16 @@ interface DataPoint {
 
 interface NetWorthChartProps {
   data: DataPoint[];
+  label?: string;
 }
 
 function formatAxisDate(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString("en-US", { month: "short", day: '2-digit', year: "2-digit" });
 }
 
-export default function NetWorthChart({ data }: NetWorthChartProps) {
+export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthChartProps) {
   if (data.length === 0) {
     return (
       <div
@@ -55,16 +57,16 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
             borderRadius: 8,
             color: "var(--color-text)",
           }}
-          formatter={(val: unknown) => [formatUSD(val as number), "Net Worth"]}
+          formatter={(val: unknown) => [formatUSD(val as number), label]}
           labelFormatter={(label: unknown) => formatAxisDate(label as string)}
         />
         <Line
           type="monotone"
           dataKey="value"
-          stroke="#ffbd44"
+          stroke="var(--color-yellow)"
           strokeWidth={2}
           dot={false}
-          activeDot={{ r: 4, fill: "#ffbd44" }}
+          activeDot={{ r: 4, fill: "var(--color-yellow)" }}
         />
       </LineChart>
     </ResponsiveContainer>

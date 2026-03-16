@@ -21,9 +21,10 @@ interface AccountDoc {
 interface AccountDetailProps {
   account: AccountDoc;
   onUpdate: (data: AccountFormData) => Promise<void>;
+  onDelete: () => Promise<void>;
 }
 
-export default function AccountDetail({ account, onUpdate }: AccountDetailProps) {
+export default function AccountDetail({ account, onUpdate, onDelete }: AccountDetailProps) {
   const [editing, setEditing] = useState(false);
 
   async function handleUpdate(data: AccountFormData) {
@@ -41,7 +42,7 @@ export default function AccountDetail({ account, onUpdate }: AccountDetailProps)
             </h2>
             <span
               className="text-xs px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: "var(--color-blue)", color: "var(--color-muted)" }}
+              style={{ backgroundColor: "var(--color-border)", color: "var(--color-text)" }}
             >
               {account.type}
             </span>
@@ -52,7 +53,7 @@ export default function AccountDetail({ account, onUpdate }: AccountDetailProps)
             </p>
             {account.institutionUrl && (
               <ExternalLink href={account.institutionUrl} className="text-sm mt-1">
-                Open account
+                Go To Account
               </ExternalLink>
             )}
           </div>
@@ -68,7 +69,7 @@ export default function AccountDetail({ account, onUpdate }: AccountDetailProps)
             <button
               onClick={() => setEditing(true)}
               className="text-xs px-3 py-1 rounded-full"
-              style={{ backgroundColor: "var(--color-blue)", color: "var(--color-yellow)" }}
+              style={{ border: "1px solid var(--color-border)", color: "var(--color-text)" }}
             >
               Update Values
             </button>
@@ -84,7 +85,9 @@ export default function AccountDetail({ account, onUpdate }: AccountDetailProps)
               holdings: account.holdings ?? [],
             }}
             onSubmit={handleUpdate}
+            onDelete={onDelete}
             submitLabel="Save Changes"
+            showDateField
           />
         ) : (
           <p className="text-sm" style={{ color: "var(--color-muted)" }}>

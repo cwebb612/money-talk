@@ -24,7 +24,7 @@ export default function AccountCard({ account }: AccountCardProps) {
           </p>
           <span
             className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
-            style={{ backgroundColor: "var(--color-blue)", color: "var(--color-muted)" }}
+            style={{ backgroundColor: "var(--color-border)", color: "var(--color-muted)" }}
           >
             {TYPE_LABELS[account.type]}
           </span>

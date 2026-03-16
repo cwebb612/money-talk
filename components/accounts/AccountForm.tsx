@@ -12,12 +12,15 @@ export interface AccountFormData {
   institutionUrl: string;
   balance: number;
   holdings: Holding[];
+  recordedAt?: string;
 }
 
 interface AccountFormProps {
   initial?: Partial<AccountFormData>;
   onSubmit: (data: AccountFormData) => Promise<void>;
+  onDelete?: () => Promise<void>;
   submitLabel?: string;
+  showDateField?: boolean;
 }
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
@@ -30,13 +33,17 @@ const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
 export default function AccountForm({
   initial,
   onSubmit,
+  onDelete,
   submitLabel = "Save",
+  showDateField = false,
 }: AccountFormProps) {
+  const today = new Date().toISOString().split("T")[0];
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<AccountType>(initial?.type ?? "cash");
   const [institutionUrl, setInstitutionUrl] = useState(initial?.institutionUrl ?? "");
   const [balance, setBalance] = useState(initial?.balance ?? 0);
   const [holdings, setHoldings] = useState<Holding[]>(initial?.holdings ?? []);
+  const [recordedAt, setRecordedAt] = useState(initial?.recordedAt ?? today);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,7 +52,7 @@ export default function AccountForm({
     setError("");
     setLoading(true);
     try {
-      await onSubmit({ name, type, institutionUrl, balance, holdings });
+      await onSubmit({ name, type, institutionUrl, balance, holdings, recordedAt: showDateField ? recordedAt : undefined });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -81,7 +88,7 @@ export default function AccountForm({
               onClick={() => setType(value)}
               className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
               style={{
-                backgroundColor: type === value ? "var(--color-yellow)" : "var(--color-blue)",
+                backgroundColor: type === value ? "var(--color-yellow)" : "var(--color-border)",
                 color: type === value ? "black" : "var(--color-text)",
               }}
             >
@@ -125,11 +132,36 @@ export default function AccountForm({
         </div>
       )}
 
+      {showDateField && (
+        <div>
+          <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+            Date
+          </label>
+          <Input
+            type="date"
+            value={recordedAt}
+            onChange={(e) => setRecordedAt(e.target.value)}
+            required
+          />
+        </div>
+      )}
+
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Button type="submit" disabled={loading}>
         {loading ? "Saving…" : submitLabel}
       </Button>
+
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="w-full py-2 rounded-lg text-sm font-medium"
+          style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+        >
+          Delete Account
+        </button>
+      )}
     </form>
   );
 }

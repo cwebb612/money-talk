@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--color-bg)" }}>
-      <div className="w-full max-w-sm p-8 rounded-xl" style={{ backgroundColor: "var(--color-blue)" }}>
+      <div className="w-full max-w-sm p-8 rounded-xl" style={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)" }}>
         <h1 className="text-2xl font-bold mb-6 text-center" style={{ color: "var(--color-yellow)" }}>
           Money Talk
         </h1>

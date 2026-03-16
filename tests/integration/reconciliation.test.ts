@@ -54,7 +54,7 @@ test.describe("Reconciliation", () => {
     await page.click('button[type="submit"]');
 
     await page.click("text=Bank With Link");
-    const link = page.locator('a:has-text("Open account")');
+    const link = page.locator('a:has-text("Go To Account")');
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute("target", "_blank");
   });

@@ -25,7 +25,8 @@ All config lives in `.env` at the repo root. Required vars:
 
 | Variable | Description |
 |---|---|
-| `MONGO_URL` | MongoDB connection string (`mongodb://USERNAME:PASSWORD@IP:PORT/db-name`) |
+| `MONGO_URL` | MongoDB connection string without database (`mongodb://USERNAME:PASSWORD@IP:PORT`) |
+| `MONGO_DB_NAME` | MongoDB database name — used as both the target database and auth source |
 | `JWT_SECRET` | Secret for signing JWT tokens (min 32 chars) |
 | `APP_USERNAME` | Login username |
 | `APP_PASSWORD` | Plain text password — bcrypt-hashed on first startup, never stored plain |
@@ -36,7 +37,7 @@ Copy `.env.example` to `.env` to get started.
 
 ### Auth flow
 
-- `proxy.ts` (Next.js 16 proxy — replaces `middleware.ts`) guards all `/(app)` routes. It reads the `token` httpOnly cookie and calls `verifyToken`. Unauthenticated requests redirect to `/login`.
+- `middleware.ts` guards all `/(app)` routes. It reads the `token` httpOnly cookie and calls `verifyToken`. Unauthenticated requests redirect to `/login`.
 - Auth API routes live at `app/api/auth/login` and `app/api/auth/logout`.
 - On first DB connection, `lib/db/seed.ts` checks if a user exists; if not, it creates one from `APP_USERNAME` + `APP_PASSWORD`.
 
@@ -64,8 +65,12 @@ The dashboard aggregates the `activity` collection server-side: for each calenda
 ### Styling
 
 All colors are CSS variables defined in `app/globals.css`:
-- `--color-bg` `#1a1a2e`, `--color-card` `#16213e`, `--color-blue` `#2e2d50`
-- `--color-yellow` `#ffbd44` (primary accent), `--color-text` `#e0e0e0`, `--color-muted` `#888`
+- `--color-bg` `#111111` — page background
+- `--color-card` `#1c1c1e` — card/surface background
+- `--color-border` `#2c2c2e` — subtle borders and dividers
+- `--color-blue` `#3b82f6` — accent only (focus rings, highlights); not used as a background
+- `--color-yellow` `#f59e0b` — primary accent (CTAs, key values)
+- `--color-text` `#f5f5f7`, `--color-muted` `#6b7280`
 
 Use these variables for all new UI rather than hardcoding hex values.
 

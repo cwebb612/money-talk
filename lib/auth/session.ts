@@ -2,7 +2,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-const TOKEN_EXPIRY = "30d";
+const TOKEN_EXPIRY = "8h";
+const COOKIE_MAX_AGE = 60 * 60 * 8;
 const COOKIE_NAME = "token";
 
 export async function signToken(payload: Record<string, unknown>): Promise<string> {
@@ -29,7 +30,7 @@ export function setSessionCookie(response: NextResponse, token: string): void {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: COOKIE_MAX_AGE,
     path: "/",
   });
 }
