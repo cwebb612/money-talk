@@ -15,23 +15,23 @@ npm run test:integration   # Playwright e2e tests (tests/integration/)
 npm run test:unit          # Jest unit tests (tests/unit/)
 
 # Docker
-docker compose up -d       # start app + MongoDB
+docker compose up -d       # build and start the app (env vars must be set in the host shell)
 docker compose down        # stop
 ```
 
 ## Environment Variables
 
-All config lives in `.env` at the repo root. Required vars:
+Required vars:
 
 | Variable | Description |
 |---|---|
-| `MONGO_URL` | MongoDB connection string without database (`mongodb://USERNAME:PASSWORD@IP:PORT`) |
+| `MONGO_URL` | MongoDB connection string (`mongodb://USERNAME:PASSWORD@IP:PORT`) |
 | `MONGO_DB_NAME` | MongoDB database name — used as both the target database and auth source |
 | `JWT_SECRET` | Secret for signing JWT tokens (min 32 chars) |
 | `APP_USERNAME` | Login username |
 | `APP_PASSWORD` | Plain text password — bcrypt-hashed on first startup, never stored plain |
 
-Copy `.env.example` to `.env` to get started.
+For local dev, copy `.env.example` to `.env`. For Docker, export these vars in your shell before running `docker compose up` — the compose file reads them from the host environment and injects them at runtime. The `.env` file is excluded from the Docker build context.
 
 ## Architecture
 

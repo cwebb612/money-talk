@@ -8,19 +8,24 @@ A self-hosted personal finance dashboard focused on net worth tracking. Log in, 
 - **Four account types** — Cash, Stock, Crypto, Liability
 - **Reconciliation workflow** — each account stores an institution link so you can open your bank/brokerage, check the current value, and update it in one flow
 - **Activity log** — every reconciliation is recorded; the graph is built from this history
-- **Single-user auth** — simple username/password with bcrypt + JWT
+- **Single-user auth** — simple username/password with bcrypt + JWT, 8-hour sessions
+- **Light/dark mode** — toggle in the account menu
 
 ## Running with Docker (recommended)
 
+Environment variables must be set in your shell before running. Docker reads them from the host environment at both build and run time — no `.env` file is used by Docker.
+
 ```bash
-cp .env.example .env
-# edit .env with your values
+export MONGO_URL=mongodb://user:pass@host:27017
+export MONGO_DB_NAME=money-talk
+export JWT_SECRET=<see below>
+export APP_USERNAME=yourname
+export APP_PASSWORD=yourpassword
+
 docker compose up -d
 ```
 
-Open `http://localhost:3000` and log in with the credentials from your `.env`.
-
-MongoDB data persists in a named Docker volume (`money-talk-mongo-data`).
+Open `http://localhost:3000` and log in with your `APP_USERNAME` / `APP_PASSWORD`.
 
 ```bash
 docker compose down        # stop
@@ -29,29 +34,42 @@ docker compose down -v     # stop and delete data volume
 
 ## Local Development
 
-Requires Node.js 20+ and a running MongoDB instance.
+Requires Node.js 22+ and a running MongoDB instance.
 
 ```bash
-# Start MongoDB via Docker (if you don't have one running)
-docker run -d -p 27017:27017 --name mongo mongo:7
-
 cp .env.example .env
-# edit .env — set MONGO_URL to mongodb://localhost:27017/money-talk
+# edit .env with your values
 
 npm install
 npm run dev
 ```
 
+For local dev the app loads variables from `.env` automatically via Next.js.
+
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `MONGO_URL` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Secret for signing session tokens (min 32 chars) |
-| `APP_USERNAME` | Yes | Login username |
-| `APP_PASSWORD` | Yes | Login password — hashed with bcrypt on first startup, never stored plain |
+| Variable | Description |
+|---|---|
+| `MONGO_URL` | MongoDB connection string (`mongodb://user:pass@host:port`) |
+| `MONGO_DB_NAME` | MongoDB database name — used as both target database and auth source |
+| `JWT_SECRET` | Secret for signing session tokens — min 32 chars, see below |
+| `APP_USERNAME` | Login username |
+| `APP_PASSWORD` | Login password — bcrypt-hashed on first startup, never stored plain |
 
-On first startup the app checks whether a user document exists in MongoDB. If not, it creates one from `APP_USERNAME` and `APP_PASSWORD`. To change credentials, update `.env` and delete the user document from the `users` collection.
+On first startup the app checks whether a user document exists in MongoDB. If not, it creates one from `APP_USERNAME` and `APP_PASSWORD`. To change credentials, update the values and delete the user document from the `users` collection.
+
+### Generating a secure JWT_SECRET
+
+
+```bash
+# openssl (available on macOS/Linux)
+openssl rand -base64 48
+
+# Node.js
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+The output is a random 64-character string. Paste it as your `JWT_SECRET`. Keep it private — anyone with this value can forge login sessions.
 
 ## Tests
 

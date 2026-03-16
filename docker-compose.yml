@@ -1,7 +1,18 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        - MONGO_URL=${MONGO_URL}
+        - MONGO_DB_NAME=${MONGO_DB_NAME}
+        - JWT_SECRET=${JWT_SECRET}
+        - APP_USERNAME=${APP_USERNAME}
+        - APP_PASSWORD=${APP_PASSWORD}
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - MONGO_DB_NAME=${MONGO_DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD=${APP_PASSWORD}
