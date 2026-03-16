@@ -41,7 +41,6 @@ import { validateApiKey } from "../../../../lib/auth/apiKey";
 import connect from "../../../../lib/db/mongodb";
 import Activity from "../../../../lib/db/models/activity";
 import Account from "../../../../lib/db/models/account";
-import { Types } from "mongoose";
 
 export async function GET(request: NextRequest) {
   const userId = await validateApiKey(request);
@@ -52,9 +51,8 @@ export async function GET(request: NextRequest) {
   const to = searchParams.get("to");
 
   await connect();
-  const uid = new Types.ObjectId(userId);
 
-  const matchStage: Record<string, unknown> = { userId: uid };
+  const matchStage: Record<string, unknown> = {};
   if (from || to) {
     const dateFilter: Record<string, Date> = {};
     if (from) dateFilter.$gte = new Date(from);
@@ -62,7 +60,7 @@ export async function GET(request: NextRequest) {
     matchStage.recordedAt = dateFilter;
   }
 
-  const accounts = await Account.find({ userId: uid }).select("_id type").lean();
+  const accounts = await Account.find().select("_id type").lean();
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
 
   const activities = await Activity.find(matchStage).sort({ recordedAt: 1 }).lean();

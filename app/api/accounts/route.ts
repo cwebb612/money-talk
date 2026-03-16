@@ -5,7 +5,6 @@ import connect from "../../../lib/db/mongodb";
 import Account from "../../../lib/db/models/account";
 import Activity from "../../../lib/db/models/activity";
 import { calculateAccountValue } from "../../../lib/utils/money";
-import { Types } from "mongoose";
 
 async function getUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -20,12 +19,10 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connect();
-  const accounts = await Account.find({ userId: new Types.ObjectId(userId) })
-    .sort({ type: 1 })
-    .lean();
+  const accounts = await Account.find().sort({ type: 1 }).lean();
 
   return NextResponse.json(
-    accounts.map((a) => ({ ...a, _id: a._id.toString(), userId: a.userId.toString() }))
+    accounts.map((a) => ({ ...a, _id: a._id.toString() }))
   );
 }
 
@@ -52,11 +49,9 @@ export async function POST(request: NextRequest) {
   }
 
   await connect();
-  const uid = new Types.ObjectId(userId);
   const currentValue = calculateAccountValue(body);
 
   const account = await Account.create({
-    userId: uid,
     name: body.name,
     type: body.type,
     institutionUrl: body.institutionUrl ?? undefined,
@@ -67,13 +62,12 @@ export async function POST(request: NextRequest) {
 
   await Activity.create({
     accountId: account._id,
-    userId: uid,
     value: currentValue,
     recordedAt: new Date(),
   });
 
   return NextResponse.json(
-    { ...account.toObject(), _id: account._id.toString(), userId: uid.toString() },
+    { ...account.toObject(), _id: account._id.toString() },
     { status: 201 }
   );
 }

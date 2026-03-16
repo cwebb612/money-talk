@@ -25,12 +25,10 @@ export async function GET(
 
   const activities = await Activity.find({
     accountId: new Types.ObjectId(id),
-    userId: new Types.ObjectId(userId),
   })
     .sort({ recordedAt: 1 })
     .lean();
 
-  // Collapse to one point per day (latest value)
   const dayMap = new Map<string, number>();
   for (const a of activities) {
     const day = a.recordedAt.toISOString().split("T")[0];

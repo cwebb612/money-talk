@@ -45,10 +45,10 @@ For local dev, copy `.env.example` to `.env`. For Docker, export these vars in y
 
 Four MongoDB collections via Mongoose (`lib/db/models/`):
 
-- **users** — single-user app; username + bcrypt passwordHash
-- **accounts** — `type` enum: `cash | stock | crypto | liability`. Cash/liability have a `balance` field. Stock/crypto have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save.
-- **activity** — append-only time-series log. One entry is written every time an account is created or reconciled. Used to build the net worth graph. Never updated or deleted.
-- **apikeys** — API key records: `name`, `keyHash` (SHA256 of the raw key), `prefix` (first 11 chars for display), `lastUsedAt`. Full key is never stored.
+- **users** — multi-user; username + bcrypt passwordHash + `lastLoginAt`. All users are admins. First user seeded from `APP_USERNAME`/`APP_PASSWORD` env vars; subsequent users created via the Users page.
+- **accounts** — `type` enum: `cash | stock | crypto | liability`. Cash/liability have a `balance` field. Stock/crypto have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save. Shared across all users — no `userId` scoping.
+- **activity** — append-only time-series log. One entry is written every time an account is created or reconciled. Used to build the net worth graph. Never updated or deleted. Shared across all users — no `userId` scoping.
+- **apikeys** — API key records: `name`, `key` (plaintext), `prefix` (first 11 chars for display), `lastUsedAt`. Scoped to `userId`.
 
 ### Net worth graph
 
@@ -61,6 +61,7 @@ The dashboard aggregates the `activity` collection server-side: for each calenda
 - `app/api-doc/` — Swagger UI (public; path starts with `api` so proxy skips it)
 - `app/api/v1/` — public REST API, gated by `X-API-Key` header
 - `app/api/keys/` — API key CRUD, gated by session cookie
+- `app/api/users/` — user CRUD, gated by session cookie; all authenticated users can manage all users
 
 ### DB connection
 

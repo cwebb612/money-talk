@@ -7,14 +7,6 @@ import Activity from "../../../../lib/db/models/activity";
 import { calculateAccountValue } from "../../../../lib/utils/money";
 import { Types } from "mongoose";
 
-async function getVerifiedAccount(id: string, userId: string) {
-  await connect();
-  return Account.findOne({
-    _id: new Types.ObjectId(id),
-    userId: new Types.ObjectId(userId),
-  });
-}
-
 async function getUserId(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
@@ -31,10 +23,11 @@ export async function GET(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const account = await getVerifiedAccount(id, userId);
+  await connect();
+  const account = await Account.findById(new Types.ObjectId(id));
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-  return NextResponse.json({ ...account.toObject(), _id: account._id.toString(), userId: account.userId.toString() });
+  return NextResponse.json({ ...account.toObject(), _id: account._id.toString() });
 }
 
 export async function PUT(
@@ -45,25 +38,23 @@ export async function PUT(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const account = await getVerifiedAccount(id, userId);
+  await connect();
+  const account = await Account.findById(new Types.ObjectId(id));
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
 
-  // Always update non-value metadata
   if (body.name != null) account.name = body.name;
   if (body.institutionUrl != null) account.institutionUrl = body.institutionUrl;
 
   const submittedRecordedAt = body.recordedAt ? new Date(body.recordedAt) : new Date();
 
-  // Calculate the value for the submitted balance/holdings (used for the activity entry)
   const submittedValue = calculateAccountValue({
     type: account.type,
     balance: body.balance ?? account.balance,
     holdings: body.holdings ?? account.holdings,
   });
 
-  // Only update balance/holdings/currentValue if this is the most recent entry
   const mostRecentActivity = await Activity.findOne({ accountId: account._id })
     .sort({ recordedAt: -1 })
     .lean();
@@ -80,12 +71,11 @@ export async function PUT(
 
   await Activity.create({
     accountId: account._id,
-    userId: new Types.ObjectId(userId),
     value: submittedValue,
     recordedAt: submittedRecordedAt,
   });
 
-  return NextResponse.json({ ...account.toObject(), _id: account._id.toString(), userId: account.userId.toString() });
+  return NextResponse.json({ ...account.toObject(), _id: account._id.toString() });
 }
 
 export async function DELETE(
@@ -96,7 +86,8 @@ export async function DELETE(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const account = await getVerifiedAccount(id, userId);
+  await connect();
+  const account = await Account.findById(new Types.ObjectId(id));
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
   await account.deleteOne();

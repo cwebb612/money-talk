@@ -7,16 +7,12 @@ import Activity from "../../lib/db/models/activity";
 import NetWorthHeader from "../../components/dashboard/NetWorthHeader";
 import NetWorthChart from "../../components/dashboard/NetWorthChart";
 import AccountBreakdown from "../../components/dashboard/AccountBreakdown";
-import { Types } from "mongoose";
 
-async function getDashboardData(userId: string) {
+async function getDashboardData() {
   await connect();
-  const uid = new Types.ObjectId(userId);
 
-  const accounts = await Account.find({ userId: uid }).sort({ type: 1 }).lean();
-
-  // Net worth history: one point per day (latest per account per day)
-  const activities = await Activity.find({ userId: uid }).sort({ recordedAt: 1 }).lean();
+  const accounts = await Account.find().sort({ type: 1 }).lean();
+  const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
 
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
   const dayMap = new Map<string, Map<string, number>>();
@@ -54,11 +50,7 @@ async function getDashboardData(userId: string) {
       : new Date().toISOString();
 
   return {
-    accounts: accounts.map((a) => ({
-      ...a,
-      _id: a._id.toString(),
-      userId: a.userId.toString(),
-    })),
+    accounts: accounts.map((a) => ({ ...a, _id: a._id.toString() })),
     chartData,
     currentNetWorth,
     lastUpdated,
@@ -72,8 +64,7 @@ export default async function DashboardPage() {
 
   if (!payload?.userId) return null;
 
-  const { accounts, chartData, currentNetWorth, lastUpdated } =
-    await getDashboardData(payload.userId as string);
+  const { accounts, chartData, currentNetWorth, lastUpdated } = await getDashboardData();
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">

@@ -48,7 +48,6 @@ export async function GET(
 
   const activities = await Activity.find({
     accountId: new Types.ObjectId(id),
-    userId: new Types.ObjectId(userId),
   })
     .sort({ recordedAt: 1 })
     .lean();

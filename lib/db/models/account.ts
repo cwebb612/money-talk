@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export type AccountType = "cash" | "stock" | "crypto" | "liability";
 
@@ -9,7 +9,6 @@ export interface IHolding {
 }
 
 export interface IAccount extends Document {
-  userId: Types.ObjectId;
   name: string;
   type: AccountType;
   institutionUrl?: string;
@@ -31,7 +30,6 @@ const holdingSchema = new Schema<IHolding>(
 
 const accountSchema = new Schema<IAccount>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
     type: {
       type: String,

@@ -27,16 +27,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateApiKey } from "../../../../lib/auth/apiKey";
 import connect from "../../../../lib/db/mongodb";
 import Account from "../../../../lib/db/models/account";
-import { Types } from "mongoose";
 
 export async function GET(request: NextRequest) {
   const userId = await validateApiKey(request);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await connect();
-  const accounts = await Account.find({ userId: new Types.ObjectId(userId) })
-    .sort({ type: 1 })
-    .lean();
+  const accounts = await Account.find().sort({ type: 1 }).lean();
 
   return NextResponse.json(
     accounts.map((a) => ({

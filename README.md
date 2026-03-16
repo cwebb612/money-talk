@@ -8,7 +8,7 @@ A self-hosted personal finance dashboard focused on net worth tracking. Log in, 
 - **Four account types** — Cash, Stock, Crypto, Liability
 - **Reconciliation workflow** — each account stores an institution link so you can open your bank/brokerage, check the current value, and update it in one flow
 - **Activity log** — every reconciliation is recorded; the graph is built from this history
-- **Single-user auth** — simple username/password with bcrypt + JWT, 8-hour sessions
+- **Multi-user** — all users are admins; full user management (create, edit, delete) from the account menu
 - **Light/dark mode** — toggle in the account menu
 - **REST API** — read-only endpoints for net worth, accounts, and activity; secured with API keys
 - **API keys** — create and revoke keys from the account menu; interactive docs at `/api-doc`

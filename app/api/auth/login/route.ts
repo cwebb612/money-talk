@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
+  await User.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
+
   const token = await signToken({ userId: user._id.toString(), username: user.username });
   const response = NextResponse.json({ ok: true });
   setSessionCookie(response, token);

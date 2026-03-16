@@ -4,7 +4,6 @@ import { verifyToken } from "../../../../lib/auth/session";
 import connect from "../../../../lib/db/mongodb";
 import Activity from "../../../../lib/db/models/activity";
 import Account from "../../../../lib/db/models/account";
-import { Types } from "mongoose";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
@@ -19,9 +18,8 @@ export async function GET(request: NextRequest) {
   const to = searchParams.get("to");
 
   await connect();
-  const userId = new Types.ObjectId(payload.userId as string);
 
-  const matchStage: Record<string, unknown> = { userId };
+  const matchStage: Record<string, unknown> = {};
   if (from || to) {
     const dateFilter: Record<string, Date> = {};
     if (from) dateFilter.$gte = new Date(from);
@@ -29,7 +27,7 @@ export async function GET(request: NextRequest) {
     matchStage.recordedAt = dateFilter;
   }
 
-  const accounts = await Account.find({ userId }).select("_id type").lean();
+  const accounts = await Account.find().select("_id type").lean();
   const accountTypes = new Map(
     accounts.map((a) => [a._id.toString(), a.type])
   );
@@ -38,7 +36,6 @@ export async function GET(request: NextRequest) {
     .sort({ recordedAt: 1 })
     .lean();
 
-  // Group: per day, latest value per account
   const dayMap = new Map<string, Map<string, number>>();
   for (const activity of activities) {
     const day = activity.recordedAt.toISOString().split("T")[0];
@@ -46,7 +43,6 @@ export async function GET(request: NextRequest) {
     dayMap.get(day)!.set(activity.accountId.toString(), activity.value);
   }
 
-  // Carry forward latest known value for each account into each day
   const allDays = [...dayMap.keys()].sort();
   const latestValues = new Map<string, number>();
   const result: { date: string; value: number }[] = [];
