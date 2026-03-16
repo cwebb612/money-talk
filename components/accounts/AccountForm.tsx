@@ -1,0 +1,135 @@
+"use client";
+
+import { useState } from "react";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
+import HoldingsEditor, { Holding } from "./HoldingsEditor";
+import { AccountType } from "../../lib/db/models/account";
+
+export interface AccountFormData {
+  name: string;
+  type: AccountType;
+  institutionUrl: string;
+  balance: number;
+  holdings: Holding[];
+}
+
+interface AccountFormProps {
+  initial?: Partial<AccountFormData>;
+  onSubmit: (data: AccountFormData) => Promise<void>;
+  submitLabel?: string;
+}
+
+const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
+  { value: "cash", label: "Cash" },
+  { value: "stock", label: "Stock" },
+  { value: "crypto", label: "Crypto" },
+  { value: "liability", label: "Liability" },
+];
+
+export default function AccountForm({
+  initial,
+  onSubmit,
+  submitLabel = "Save",
+}: AccountFormProps) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [type, setType] = useState<AccountType>(initial?.type ?? "cash");
+  const [institutionUrl, setInstitutionUrl] = useState(initial?.institutionUrl ?? "");
+  const [balance, setBalance] = useState(initial?.balance ?? 0);
+  const [holdings, setHoldings] = useState<Holding[]>(initial?.holdings ?? []);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await onSubmit({ name, type, institutionUrl, balance, holdings });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isCashLike = type === "cash" || type === "liability";
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div>
+        <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+          Account Name
+        </label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Chase Checking"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+          Type
+        </label>
+        <div className="flex gap-2 flex-wrap">
+          {ACCOUNT_TYPES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setType(value)}
+              className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+              style={{
+                backgroundColor: type === value ? "var(--color-yellow)" : "var(--color-blue)",
+                color: type === value ? "black" : "var(--color-text)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+          Institution Link (optional)
+        </label>
+        <Input
+          type="url"
+          value={institutionUrl}
+          onChange={(e) => setInstitutionUrl(e.target.value)}
+          placeholder="https://your-bank.com"
+        />
+      </div>
+
+      {isCashLike ? (
+        <div>
+          <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+            {type === "liability" ? "Amount Owed" : "Balance"}
+          </label>
+          <Input
+            type="number"
+            value={balance || ""}
+            onChange={(e) => setBalance(parseFloat(e.target.value) || 0)}
+            placeholder="0.00"
+            required
+          />
+        </div>
+      ) : (
+        <div>
+          <label className="block text-xs mb-2" style={{ color: "var(--color-muted)" }}>
+            Holdings
+          </label>
+          <HoldingsEditor holdings={holdings} onChange={setHoldings} />
+        </div>
+      )}
+
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
+      <Button type="submit" disabled={loading}>
+        {loading ? "Saving…" : submitLabel}
+      </Button>
+    </form>
+  );
+}

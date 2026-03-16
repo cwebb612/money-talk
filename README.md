@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Money Talk
 
-## Getting Started
+A self-hosted personal finance dashboard focused on net worth tracking. Log in, reconcile your accounts one by one using each institution's link, and watch your net worth graph grow over time.
 
-First, run the development server:
+## Features
+
+- **Net worth dashboard** — line chart of net worth history, account breakdown by type
+- **Four account types** — Cash, Stock, Crypto, Liability
+- **Reconciliation workflow** — each account stores an institution link so you can open your bank/brokerage, check the current value, and update it in one flow
+- **Activity log** — every reconciliation is recorded; the graph is built from this history
+- **Single-user auth** — simple username/password with bcrypt + JWT
+
+## Running with Docker (recommended)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
+# edit .env with your values
+docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` and log in with the credentials from your `.env`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+MongoDB data persists in a named Docker volume (`money-talk-mongo-data`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker compose down        # stop
+docker compose down -v     # stop and delete data volume
+```
 
-## Learn More
+## Local Development
 
-To learn more about Next.js, take a look at the following resources:
+Requires Node.js 20+ and a running MongoDB instance.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Start MongoDB via Docker (if you don't have one running)
+docker run -d -p 27017:27017 --name mongo mongo:7
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+cp .env.example .env
+# edit .env — set MONGO_URL to mongodb://localhost:27017/money-talk
 
-## Deploy on Vercel
+npm install
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Required | Description |
+|---|---|---|
+| `MONGO_URL` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Secret for signing session tokens (min 32 chars) |
+| `APP_USERNAME` | Yes | Login username |
+| `APP_PASSWORD` | Yes | Login password — hashed with bcrypt on first startup, never stored plain |
+
+On first startup the app checks whether a user document exists in MongoDB. If not, it creates one from `APP_USERNAME` and `APP_PASSWORD`. To change credentials, update `.env` and delete the user document from the `users` collection.
+
+## Tests
+
+Integration tests require the app and a database to be running.
+
+```bash
+npm run test:integration   # Playwright e2e (tests/integration/)
+npm run test:unit          # Jest unit tests (tests/unit/)
+```
+
+## Tech Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript 5**
+- **MongoDB 7** via **Mongoose**
+- **Recharts** for the net worth line chart
+- **bcryptjs** + **jose** for auth
+- **Tailwind CSS v4** with CSS variables for theming
+- **Playwright** (integration) + **Jest** (unit)
