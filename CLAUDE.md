@@ -37,7 +37,7 @@ Copy `.env.example` to `.env` to get started.
 
 ### Auth flow
 
-- `middleware.ts` guards all `/(app)` routes. It reads the `token` httpOnly cookie and calls `verifyToken`. Unauthenticated requests redirect to `/login`.
+- `proxy.ts` guards all `/(app)` routes. It reads the `token` httpOnly cookie and calls `verifyToken`. Unauthenticated requests redirect to `/login`.
 - Auth API routes live at `app/api/auth/login` and `app/api/auth/logout`.
 - On first DB connection, `lib/db/seed.ts` checks if a user exists; if not, it creates one from `APP_USERNAME` + `APP_PASSWORD`.
 
