@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect, useRef, useState } from "react";
 
 function SunIcon() {
@@ -37,8 +37,19 @@ function UserIcon() {
   );
 }
 
+function KeyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7.5" cy="15.5" r="5.5" />
+      <path d="M21 2l-9.6 9.6" />
+      <path d="M15.5 7.5l3 3L22 7l-3-3" />
+    </svg>
+  );
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -138,6 +149,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   {isDark ? <SunIcon /> : <MoonIcon />}
                   {isDark ? "Light Mode" : "Dark Mode"}
                 </button>
+
+                <div style={{ borderTop: "1px solid var(--color-border)" }} />
+
+                <Link
+                  href="/api-keys"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 w-full text-left text-sm px-4 py-3"
+                  style={{
+                    color: pathname === "/api-keys" ? "var(--color-yellow)" : "var(--color-text)",
+                    cursor: "pointer",
+                    textDecoration: "none",
+                    display: "flex",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--color-border)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  <KeyIcon />
+                  API Keys
+                </Link>
 
                 <div style={{ borderTop: "1px solid var(--color-border)" }} />
 

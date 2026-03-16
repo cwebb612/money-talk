@@ -10,6 +10,8 @@ A self-hosted personal finance dashboard focused on net worth tracking. Log in, 
 - **Activity log** — every reconciliation is recorded; the graph is built from this history
 - **Single-user auth** — simple username/password with bcrypt + JWT, 8-hour sessions
 - **Light/dark mode** — toggle in the account menu
+- **REST API** — read-only endpoints for net worth, accounts, and activity; secured with API keys
+- **API keys** — create and revoke keys from the account menu; interactive docs at `/api-doc`
 
 ## Running with Docker (recommended)
 
@@ -80,6 +82,28 @@ npm run test:integration   # Playwright e2e (tests/integration/)
 npm run test:unit          # Jest unit tests (tests/unit/)
 ```
 
+## API
+
+The app exposes a read-only REST API secured with API keys. Create and revoke keys from the account menu (top-right) → **API Keys**. Interactive docs are at `/api-doc`.
+
+### Endpoints
+
+All data endpoints require the key in an `X-API-Key` header.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v1/net-worth` | Daily net worth history. Optional `?from=` / `?to=` date filters. |
+| `GET` | `/api/v1/accounts` | All accounts with current values. |
+| `GET` | `/api/v1/accounts/:id/activity` | Reconciliation history for one account. |
+
+Key management endpoints require a logged-in browser session.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/keys` | List API keys (prefix + metadata only — full key is never re-shown). |
+| `POST` | `/api/keys` | Create a key. Body: `{ "name": "label" }`. Full key returned once. |
+| `DELETE` | `/api/keys/:id` | Revoke a key immediately. |
+
 ## Tech Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript 5**
@@ -87,4 +111,5 @@ npm run test:unit          # Jest unit tests (tests/unit/)
 - **Recharts** for the net worth line chart
 - **bcryptjs** + **jose** for auth
 - **Tailwind CSS v4** with CSS variables for theming
+- **next-swagger-doc** + **swagger-ui-react** for API docs
 - **Playwright** (integration) + **Jest** (unit)

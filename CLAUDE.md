@@ -43,11 +43,12 @@ For local dev, copy `.env.example` to `.env`. For Docker, export these vars in y
 
 ### Data model
 
-Three MongoDB collections via Mongoose (`lib/db/models/`):
+Four MongoDB collections via Mongoose (`lib/db/models/`):
 
 - **users** — single-user app; username + bcrypt passwordHash
 - **accounts** — `type` enum: `cash | stock | crypto | liability`. Cash/liability have a `balance` field. Stock/crypto have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save.
 - **activity** — append-only time-series log. One entry is written every time an account is created or reconciled. Used to build the net worth graph. Never updated or deleted.
+- **apikeys** — API key records: `name`, `keyHash` (SHA256 of the raw key), `prefix` (first 11 chars for display), `lastUsedAt`. Full key is never stored.
 
 ### Net worth graph
 
@@ -57,6 +58,9 @@ The dashboard aggregates the `activity` collection server-side: for each calenda
 
 - `app/(auth)/` — unauthenticated pages (login)
 - `app/(app)/` — auth-gated pages with the nav shell layout
+- `app/api-doc/` — Swagger UI (public; path starts with `api` so proxy skips it)
+- `app/api/v1/` — public REST API, gated by `X-API-Key` header
+- `app/api/keys/` — API key CRUD, gated by session cookie
 
 ### DB connection
 
@@ -79,3 +83,5 @@ Use these variables for all new UI rather than hardcoding hex values.
 - `lib/utils/money.ts` — `calculateAccountValue(account)` (pure, no DB) and `formatUSD(value)`
 - `lib/auth/session.ts` — `signToken`, `verifyToken`, `setSessionCookie`, `clearSessionCookie`
 - `lib/auth/password.ts` — `hashPassword`, `comparePassword` (bcryptjs, saltRounds: 10)
+- `lib/auth/apiKey.ts` — `generateApiKey()`, `hashApiKey()`, `validateApiKey(request)` (SHA256-based)
+- `lib/swagger.ts` — `getApiDocs()` builds the OpenAPI spec via `next-swagger-doc`; JSDoc `@swagger` annotations live in the route files themselves
