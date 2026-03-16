@@ -14,9 +14,6 @@ export default function NetWorthHeader({ value, updatedAt }: NetWorthHeaderProps
 
   return (
     <div className="mb-2">
-      <p className="text-sm mb-1" style={{ color: "var(--color-muted)" }}>
-        Net Worth
-      </p>
       <p className="text-4xl font-bold" style={{ color: "var(--color-yellow)" }}>
         {formatUSD(value)}
       </p>

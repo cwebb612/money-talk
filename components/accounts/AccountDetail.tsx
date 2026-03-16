@@ -6,6 +6,7 @@ import ExternalLink from "../ui/ExternalLink";
 import AccountForm, { AccountFormData } from "./AccountForm";
 import { AccountType } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
+import Button from "../ui/Button";
 
 interface AccountDoc {
   _id: string;
@@ -21,11 +22,24 @@ interface AccountDoc {
 interface AccountDetailProps {
   account: AccountDoc;
   onUpdate: (data: AccountFormData) => Promise<void>;
+  onRefreshPrices: () => Promise<void>;
   onDelete: () => Promise<void>;
 }
 
-export default function AccountDetail({ account, onUpdate, onDelete }: AccountDetailProps) {
+export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDelete }: AccountDetailProps) {
   const [editing, setEditing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const isStockLike = account.type === "stock" || account.type === "crypto";
+
+  async function handleRefreshPrices() {
+    setRefreshing(true);
+    try {
+      await onRefreshPrices();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function handleUpdate(data: AccountFormData) {
     await onUpdate(data);
@@ -47,10 +61,21 @@ export default function AccountDetail({ account, onUpdate, onDelete }: AccountDe
               {account.type}
             </span>
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end gap-2">
             <p className="text-2xl font-bold" style={{ color: "var(--color-yellow)" }}>
               {formatUSD(account.currentValue)}
             </p>
+            {isStockLike && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleRefreshPrices}
+                disabled={refreshing}
+                className="text-xs"
+              >
+                {refreshing ? "Refreshing…" : "Refresh Prices"}
+              </Button>
+            )}
             {account.institutionUrl && (
               <ExternalLink href={account.institutionUrl} className="text-sm mt-1">
                 Go To Account

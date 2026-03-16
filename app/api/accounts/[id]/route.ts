@@ -59,7 +59,12 @@ export async function PUT(
     .sort({ recordedAt: -1 })
     .lean();
 
-  const isLatest = !mostRecentActivity || submittedRecordedAt >= mostRecentActivity.recordedAt;
+  const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+  const isLatest =
+    !mostRecentActivity ||
+    toDateStr(submittedRecordedAt) >= toDateStr(mostRecentActivity.recordedAt);
+
+  const submittedHoldings = body.holdings ?? account.holdings;
 
   if (isLatest) {
     if (body.balance != null) account.balance = body.balance;
@@ -72,6 +77,7 @@ export async function PUT(
   await Activity.create({
     accountId: account._id,
     value: submittedValue,
+    holdings: submittedHoldings,
     recordedAt: submittedRecordedAt,
   });
 

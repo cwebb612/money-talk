@@ -7,6 +7,7 @@ import AccountDetail from "../../../../components/accounts/AccountDetail";
 import { AccountFormData } from "../../../../components/accounts/AccountForm";
 import Card from "../../../../components/ui/Card";
 import NetWorthChart from "../../../../components/dashboard/NetWorthChart";
+import HoldingsPieChart from "../../../../components/accounts/HoldingsPieChart";
 
 interface AccountData {
   _id: string;
@@ -85,6 +86,17 @@ export default function AccountDetailPage() {
     );
   }
 
+  async function handleRefreshPrices() {
+    const res = await fetch(`/api/accounts/${id}/refresh-prices`, { method: "POST" });
+    if (!res.ok) {
+      const json = await res.json();
+      throw new Error(json.error ?? "Failed to refresh prices");
+    }
+    const updated = await res.json();
+    setAccount(updated);
+    fetchActivity();
+  }
+
   async function handleDelete() {
     if (!confirm("Delete this account? This cannot be undone.")) return;
     await fetch(`/api/accounts/${id}`, { method: "DELETE" });
@@ -102,7 +114,10 @@ export default function AccountDetailPage() {
         <Card>
           <NetWorthChart data={chartData} label="Value" />
         </Card>
-        <AccountDetail account={account} onUpdate={handleUpdate} onDelete={handleDelete} />
+        {(account.type === "stock" || account.type === "crypto") && (
+          <HoldingsPieChart holdings={account.holdings} />
+        )}
+        <AccountDetail account={account} onUpdate={handleUpdate} onRefreshPrices={handleRefreshPrices} onDelete={handleDelete} />
       </div>
     </div>
   );

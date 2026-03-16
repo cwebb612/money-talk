@@ -4,8 +4,8 @@ import { verifyToken } from "../../lib/auth/session";
 import connect from "../../lib/db/mongodb";
 import Account from "../../lib/db/models/account";
 import Activity from "../../lib/db/models/activity";
-import NetWorthHeader from "../../components/dashboard/NetWorthHeader";
-import NetWorthChart from "../../components/dashboard/NetWorthChart";
+import NetWorthCard from "../../components/dashboard/NetWorthCard";
+import AssetPieChart from "../../components/dashboard/AssetPieChart";
 import AccountBreakdown from "../../components/dashboard/AccountBreakdown";
 
 async function getDashboardData() {
@@ -50,7 +50,21 @@ async function getDashboardData() {
       : new Date().toISOString();
 
   return {
-    accounts: accounts.map((a) => ({ ...a, _id: a._id.toString() })),
+    accounts: accounts.map((a) => ({
+      _id: a._id.toString(),
+      name: a.name,
+      type: a.type,
+      institutionUrl: a.institutionUrl ?? null,
+      balance: a.balance ?? null,
+      holdings: (a.holdings ?? []).map((h) => ({
+        ticker: h.ticker,
+        quantity: h.quantity,
+        pricePerUnit: h.pricePerUnit,
+      })),
+      currentValue: a.currentValue,
+      createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt),
+      updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : String(a.updatedAt),
+    })),
     chartData,
     currentNetWorth,
     lastUpdated,
@@ -68,15 +82,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
-      <div
-        className="rounded-xl p-6"
-        style={{ backgroundColor: "var(--color-card)" }}
-      >
-        <NetWorthHeader value={currentNetWorth} updatedAt={lastUpdated} />
-        <div className="mt-4">
-          <NetWorthChart data={chartData} />
-        </div>
-      </div>
+      <NetWorthCard value={currentNetWorth} updatedAt={lastUpdated} chartData={chartData} />
 
       {accounts.length === 0 ? (
         <div className="text-center py-12">
@@ -92,8 +98,12 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <AccountBreakdown accounts={accounts as any} />
+        <>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <AssetPieChart accounts={accounts as any} />
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <AccountBreakdown accounts={accounts as any} />
+        </>
       )}
     </div>
   );

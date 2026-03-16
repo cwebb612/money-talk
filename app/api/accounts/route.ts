@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
   await Activity.create({
     accountId: account._id,
     value: currentValue,
+    holdings: account.holdings ?? [],
     recordedAt: new Date(),
   });
 
