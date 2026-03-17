@@ -10,6 +10,7 @@ export interface AccountFormData {
   name: string;
   type: AccountType;
   institutionUrl: string;
+  notes: string;
   balance: number;
   holdings: Holding[];
   recordedAt?: string;
@@ -40,6 +41,7 @@ export default function AccountForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<AccountType>(initial?.type ?? "cash");
   const [institutionUrl, setInstitutionUrl] = useState(initial?.institutionUrl ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [balance, setBalance] = useState(initial?.balance ?? 0);
   const [holdings, setHoldings] = useState<Holding[]>(initial?.holdings ?? []);
   const [recordedAt, setRecordedAt] = useState(initial?.recordedAt ?? today);
@@ -51,7 +53,7 @@ export default function AccountForm({
     setError("");
     setLoading(true);
     try {
-      await onSubmit({ name, type, institutionUrl, balance, holdings, recordedAt: showDateField ? recordedAt : undefined });
+      await onSubmit({ name, type, institutionUrl, notes, balance, holdings, recordedAt: showDateField ? recordedAt : undefined });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -107,6 +109,34 @@ export default function AccountForm({
           onChange={(e) => setInstitutionUrl(e.target.value)}
           placeholder="https://your-bank.com"
         />
+      </div>
+
+      <div>
+        <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+          Notes (optional)
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          maxLength={1000}
+          placeholder="e.g. Emergency fund target: $15k"
+          rows={3}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            borderRadius: 8,
+            border: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-bg)",
+            color: "var(--color-text)",
+            fontSize: "0.875rem",
+            resize: "vertical",
+          }}
+        />
+        {notes.length > 0 && (
+          <p className="text-xs mt-1 text-right" style={{ color: "var(--color-muted)" }}>
+            {notes.length}/1000
+          </p>
+        )}
       </div>
 
       {isCashLike ? (

@@ -15,6 +15,7 @@ interface AccountData {
   name: string;
   type: "cash" | "investment" | "liability";
   institutionUrl?: string;
+  notes?: string;
   balance?: number;
   holdings: { ticker: string; quantity: number; pricePerUnit: number }[];
   currentValue: number;

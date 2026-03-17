@@ -14,6 +14,7 @@ interface AccountDoc {
   name: string;
   type: AccountType;
   institutionUrl?: string;
+  notes?: string;
   balance?: number;
   holdings: { ticker: string; quantity: number; pricePerUnit: number }[];
   currentValue: number;
@@ -64,6 +65,11 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
             >
               {account.type}
             </span>
+            {account.notes && (
+              <p className="text-sm mt-3" style={{ color: "var(--color-muted)" }}>
+                {account.notes}
+              </p>
+            )}
           </div>
           <div className="text-right flex flex-col items-end gap-1">
             <p className="text-2xl font-bold" style={{ color: "var(--color-yellow)" }}>
@@ -118,6 +124,7 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
               name: account.name,
               type: account.type,
               institutionUrl: account.institutionUrl ?? "",
+              notes: account.notes ?? "",
               balance: account.balance ?? 0,
               holdings: account.holdings ?? [],
             }}

@@ -46,6 +46,7 @@ export async function PUT(
 
   if (body.name != null) account.name = body.name;
   if (body.institutionUrl != null) account.institutionUrl = body.institutionUrl;
+  if (body.notes != null) account.notes = body.notes;
 
   const submittedRecordedAt = body.recordedAt ? new Date(body.recordedAt) : new Date();
 
