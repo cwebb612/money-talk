@@ -12,6 +12,7 @@ export interface IAccount extends Document {
   name: string;
   type: AccountType;
   institutionUrl?: string;
+  notes?: string;
   balance?: number;
   holdings: IHolding[];
   currentValue: number;
@@ -37,6 +38,7 @@ const accountSchema = new Schema<IAccount>(
       required: true,
     },
     institutionUrl: { type: String },
+    notes: { type: String, maxlength: 1000 },
     balance: { type: Number },
     holdings: { type: [holdingSchema], default: [] },
     currentValue: { type: Number, required: true, default: 0 },

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     name: body.name,
     type: body.type,
     institutionUrl: body.institutionUrl ?? undefined,
+    notes: body.notes ?? undefined,
     balance: body.balance ?? undefined,
     holdings: body.holdings ?? [],
     currentValue: 0,
