@@ -248,3 +248,4 @@ npm run test:integration   # Playwright e2e tests (requires running app)
 - **bcryptjs** + **jose** — authentication and session tokens
 - **next-swagger-doc** + **Scalar** — API documentation
 - **Playwright** (integration tests) + **Jest** (unit tests)
+
