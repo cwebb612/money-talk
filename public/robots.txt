@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# Get out of here clankers

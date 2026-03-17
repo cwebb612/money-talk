@@ -4,6 +4,7 @@ import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import { formatUSD } from "../../lib/utils/money";
+import { X } from "lucide-react";
 
 export interface Holding {
   ticker: string;
@@ -85,7 +86,7 @@ export default function HoldingsEditor({ holdings, onChange }: HoldingsEditorPro
             className="text-xs px-2"
             style={{ color: "var(--color-muted)" }}
           >
-            ✕
+            <X size={16}/>
           </button>
         </div>
       ))}

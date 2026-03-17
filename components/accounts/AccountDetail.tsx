@@ -6,6 +6,7 @@ import ExternalLink from "../ui/ExternalLink";
 import AccountForm, { AccountFormData } from "./AccountForm";
 import { AccountType } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
+import { X } from "lucide-react";
 
 interface AccountDoc {
   _id: string;
@@ -45,16 +46,20 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
     setEditing(false);
   }
 
+  function cancelEditing() {
+    setEditing(false);
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold mb-1" style={{ color: "var(--color-text)" }}>
+            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
               {account.name}
             </h2>
             <span
-              className="text-xs px-2 py-0.5 rounded-full"
+              className="text-sm px-2 py-0.5 rounded-full"
               style={{ backgroundColor: "var(--color-border)", color: "var(--color-text)" }}
             >
               {account.type}
@@ -78,13 +83,16 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
           <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
             {editing ? "Edit Account" : "Reconcile"}
           </h3>
+          {editing ? <button onClick={cancelEditing}>
+              <X />
+          </button> : undefined}
           {!editing && (
             <div className="flex items-center gap-2">
               {isInvestment && (
                 <button
                   onClick={handleRefreshPrices}
                   disabled={refreshing}
-                  className="text-xs px-3 py-1 rounded-full"
+                  className="text-sm px-3 py-1 rounded-full"
                   style={{
                     border: "1px solid var(--color-yellow)",
                     color: refreshing ? "var(--color-muted)" : "var(--color-yellow)",
@@ -96,10 +104,10 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
               )}
               <button
                 onClick={() => setEditing(true)}
-                className="text-xs px-3 py-1 rounded-full"
+                className="text-sm px-3 py-1 rounded-full"
                 style={{ border: "1px solid var(--color-border)", color: "var(--color-text)" }}
               >
-                Update Values
+                Update Account
               </button>
             </div>
           )}
@@ -120,7 +128,7 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
           />
         ) : (
           <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-            Click &ldquo;Update Values&rdquo; to reconcile this account.
+            Click &ldquo;Update Account&rdquo; to reconcile this account.
           </p>
         )}
       </Card>
