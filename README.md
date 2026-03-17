@@ -1,8 +1,8 @@
 # Money Talk
 
-A self-hosted personal finance dashboard for tracking net worth over time. Add your accounts, reconcile them against each institution, and watch your money go.
+A self-hosted personal finance dashboard for tracking net worth over time. Add your accounts, reconcile their values regularly, and watch your money go. Designed to be a high level view of where your money is over time.
 
----
+![Dashboard Screenshot](https://github.com/cwebb612/money-talk/blob/main/screenshots/dashboard-dark.png)
 
 ## Features
 
