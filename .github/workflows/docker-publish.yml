@@ -11,6 +11,9 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     steps:
+      - name: Print version
+        run: echo "Publishing version ${{ github.event.inputs.version }}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
