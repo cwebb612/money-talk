@@ -1,0 +1,46 @@
+name: Version Bump on Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  bump:
+    if: |
+      github.event.pull_request.merged == true &&
+      (
+        contains(github.event.pull_request.labels.*.name, 'bump:patch') ||
+        contains(github.event.pull_request.labels.*.name, 'bump:minor') ||
+        contains(github.event.pull_request.labels.*.name, 'bump:major')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine bump level
+        id: bump
+        run: |
+          if ${{ contains(github.event.pull_request.labels.*.name, 'bump:major') }}; then
+            echo "level=major" >> $GITHUB_OUTPUT
+          elif ${{ contains(github.event.pull_request.labels.*.name, 'bump:minor') }}; then
+            echo "level=minor" >> $GITHUB_OUTPUT
+          else
+            echo "level=patch" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump version
+        run: npm version ${{ steps.bump.outputs.level }} -m "chore: release v%s"
+
+      - name: Push commit and tag
+        run: git push --follow-tags

@@ -52,6 +52,15 @@ Use this when you already have a MongoDB instance running elsewhere. Copy `.env.
 
 For local dev, copy the relevant `.env.example` to `.env`. The `.env` file is excluded from the Docker build context.
 
+## Release process
+
+1. Open a PR and add one label: `bump:patch`, `bump:minor`, or `bump:major`.
+2. Merge the PR — `version-bump.yml` runs `npm version`, commits the bump to `main`, and pushes a tag (e.g. `v1.2.3`).
+3. Go to **GitHub → Releases → Draft a new release**, select the tag, and publish.
+4. Publishing the release triggers `docker-publish.yml`, which builds and pushes `chartester/money-talk:v1.2.3` and `:latest` to Docker Hub.
+
+Docker images can also be published manually via **Actions → Publish to Docker Hub → Run workflow**.
+
 ## Architecture
 
 ### Auth flow

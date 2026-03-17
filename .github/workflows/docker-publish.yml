@@ -1,18 +1,29 @@
 name: Publish to Docker Hub
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Image version (e.g., 0.1.0)'
+        description: 'Image version (e.g., v1.2.3)'
         required: true
 
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Print version
-        run: echo "Publishing version ${{ github.event.inputs.version }}"
+        run: echo "Publishing version ${{ steps.version.outputs.version }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,5 +46,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            chartester/money-talk:${{ github.event.inputs.version }}
+            chartester/money-talk:${{ steps.version.outputs.version }}
             chartester/money-talk:latest
