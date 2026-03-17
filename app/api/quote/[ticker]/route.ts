@@ -22,14 +22,19 @@ export async function GET(
   }
 
   const { ticker } = await params;
+  const upper = ticker.toUpperCase();
+
+  if (upper === "CASH") {
+    return NextResponse.json({ ticker: "CASH", price: 1 });
+  }
 
   try {
-    const quote = await yf.quote(ticker.toUpperCase());
+    const quote = await yf.quote(upper);
     const price = quote.regularMarketPrice;
     if (!price) {
       return NextResponse.json({ error: "Price unavailable" }, { status: 404 });
     }
-    return NextResponse.json({ ticker: ticker.toUpperCase(), price });
+    return NextResponse.json({ ticker: upper, price });
   } catch {
     return NextResponse.json({ error: "Ticker not found" }, { status: 404 });
   }
