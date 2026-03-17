@@ -37,7 +37,7 @@ export default function AccountForm({
   submitLabel = "Save",
   showDateField = false,
 }: AccountFormProps) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in browser's local timezone
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<AccountType>(initial?.type ?? "cash");
   const [institutionUrl, setInstitutionUrl] = useState(initial?.institutionUrl ?? "");

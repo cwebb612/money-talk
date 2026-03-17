@@ -87,7 +87,11 @@ export default function AccountDetailPage() {
   }
 
   async function handleRefreshPrices() {
-    const res = await fetch(`/api/accounts/${id}/refresh-prices`, { method: "POST" });
+    const res = await fetch(`/api/accounts/${id}/refresh-prices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: new Date().toLocaleDateString("en-CA") }),
+    });
     if (!res.ok) {
       const json = await res.json();
       throw new Error(json.error ?? "Failed to refresh prices");

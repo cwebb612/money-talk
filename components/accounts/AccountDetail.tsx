@@ -6,7 +6,6 @@ import ExternalLink from "../ui/ExternalLink";
 import AccountForm, { AccountFormData } from "./AccountForm";
 import { AccountType } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
-import Button from "../ui/Button";
 
 interface AccountDoc {
   _id: string;
@@ -61,21 +60,10 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
               {account.type}
             </span>
           </div>
-          <div className="text-right flex flex-col items-end gap-2">
+          <div className="text-right flex flex-col items-end gap-1">
             <p className="text-2xl font-bold" style={{ color: "var(--color-yellow)" }}>
               {formatUSD(account.currentValue)}
             </p>
-            {isStockLike && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleRefreshPrices}
-                disabled={refreshing}
-                className="text-xs"
-              >
-                {refreshing ? "Refreshing…" : "Refresh Prices"}
-              </Button>
-            )}
             {account.institutionUrl && (
               <ExternalLink href={account.institutionUrl} className="text-sm mt-1">
                 Go To Account
@@ -91,13 +79,29 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
             {editing ? "Edit Account" : "Reconcile"}
           </h3>
           {!editing && (
-            <button
-              onClick={() => setEditing(true)}
-              className="text-xs px-3 py-1 rounded-full"
-              style={{ border: "1px solid var(--color-border)", color: "var(--color-text)" }}
-            >
-              Update Values
-            </button>
+            <div className="flex items-center gap-2">
+              {isStockLike && (
+                <button
+                  onClick={handleRefreshPrices}
+                  disabled={refreshing}
+                  className="text-xs px-3 py-1 rounded-full"
+                  style={{
+                    border: "1px solid var(--color-yellow)",
+                    color: refreshing ? "var(--color-muted)" : "var(--color-yellow)",
+                    opacity: refreshing ? 0.6 : 1,
+                  }}
+                >
+                  {refreshing ? "Refreshing…" : "Refresh Prices"}
+                </button>
+              )}
+              <button
+                onClick={() => setEditing(true)}
+                className="text-xs px-3 py-1 rounded-full"
+                style={{ border: "1px solid var(--color-border)", color: "var(--color-text)" }}
+              >
+                Update Values
+              </button>
+            </div>
           )}
         </div>
         {editing ? (

@@ -19,13 +19,16 @@ async function getUserId(): Promise<string | null> {
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const body = await request.json().catch(() => ({}));
+  const localDate: string = body.date ?? new Date().toISOString().split("T")[0];
+
   await connect();
   const account = await Account.findById(new Types.ObjectId(id));
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
@@ -54,6 +57,7 @@ export async function POST(
     accountId: account._id,
     value: account.currentValue,
     holdings: updatedHoldings,
+    date: localDate,
     recordedAt: new Date(),
   });
 

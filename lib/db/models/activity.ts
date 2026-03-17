@@ -10,6 +10,7 @@ export interface IActivity extends Document {
   accountId: Types.ObjectId;
   value: number;
   holdings: IActivityHolding[];
+  date: string; // YYYY-MM-DD in the user's local timezone
   recordedAt: Date;
 }
 
@@ -26,6 +27,7 @@ const activitySchema = new Schema<IActivity>({
   accountId: { type: Schema.Types.ObjectId, ref: "Account", required: true },
   value: { type: Number, required: true },
   holdings: { type: [activityHoldingSchema], default: [] },
+  date: { type: String, required: true },
   recordedAt: { type: Date, default: Date.now },
 });
 

@@ -12,7 +12,7 @@ export default function NewAccountPage() {
     const res = await fetch("/api/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, date: new Date().toLocaleDateString("en-CA") }),
     });
 
     if (!res.ok) {

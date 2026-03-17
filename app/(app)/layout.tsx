@@ -158,7 +158,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   {isDark ? <SunIcon /> : <MoonIcon />}
-                  {isDark ? "Light Mode" : "Dark Mode"}
+                  {isDark ? "Girl Mode" : "Boy Mode"}
                 </button>
 
                 <div style={{ borderTop: "1px solid var(--color-border)" }} />

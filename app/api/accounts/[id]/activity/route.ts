@@ -31,7 +31,7 @@ export async function GET(
 
   const dayMap = new Map<string, number>();
   for (const a of activities) {
-    const day = a.recordedAt.toISOString().split("T")[0];
+    const day = a.date;
     dayMap.set(day, a.value);
   }
 

@@ -18,7 +18,7 @@ async function getDashboardData() {
   const dayMap = new Map<string, Map<string, number>>();
 
   for (const activity of activities) {
-    const day = activity.recordedAt.toISOString().split("T")[0];
+    const day = activity.date;
     if (!dayMap.has(day)) dayMap.set(day, new Map());
     dayMap.get(day)!.set(activity.accountId.toString(), activity.value);
   }

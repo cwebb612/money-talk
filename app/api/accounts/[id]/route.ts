@@ -59,10 +59,10 @@ export async function PUT(
     .sort({ recordedAt: -1 })
     .lean();
 
-  const toDateStr = (d: Date) => d.toISOString().split("T")[0];
-  const isLatest =
-    !mostRecentActivity ||
-    toDateStr(submittedRecordedAt) >= toDateStr(mostRecentActivity.recordedAt);
+  // body.recordedAt is a YYYY-MM-DD string from the client's local date picker
+  const submittedDate = body.recordedAt as string;
+  const mostRecentDate = mostRecentActivity?.date ?? null;
+  const isLatest = !mostRecentDate || submittedDate >= mostRecentDate;
 
   const submittedHoldings = body.holdings ?? account.holdings;
 
@@ -78,6 +78,7 @@ export async function PUT(
     accountId: account._id,
     value: submittedValue,
     holdings: submittedHoldings,
+    date: submittedDate,
     recordedAt: submittedRecordedAt,
   });
 

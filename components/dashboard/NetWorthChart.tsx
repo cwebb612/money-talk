@@ -20,10 +20,24 @@ interface NetWorthChartProps {
   label?: string;
 }
 
-function formatAxisDate(dateStr: string) {
+function dateToTimestamp(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
-  const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString("en-US", { month: "short", day: '2-digit', year: "numeric" });
+  return new Date(year, month - 1, day).getTime();
+}
+
+function formatTick(ts: number) {
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatTooltipDate(ts: number) {
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthChartProps) {
@@ -38,9 +52,12 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
     );
   }
 
+  const scaledData = data.map((d) => ({ ...d, timestamp: dateToTimestamp(d.date) }));
+  const domain: [number, number] = [scaledData[0].timestamp, scaledData[scaledData.length - 1].timestamp];
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+      <AreaChart data={scaledData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
@@ -48,12 +65,15 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
           </linearGradient>
         </defs>
         <XAxis
-          dataKey="date"
-          tickFormatter={formatAxisDate}
+          dataKey="timestamp"
+          type="number"
+          scale="time"
+          domain={domain}
+          tickFormatter={formatTick}
           tick={{ fill: "var(--color-muted)", fontSize: 11 }}
           axisLine={false}
           tickLine={false}
-          minTickGap={40}
+          minTickGap={50}
         />
         <YAxis hide />
         <Tooltip
@@ -64,7 +84,7 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
             color: "var(--color-text)",
           }}
           formatter={(val: unknown) => [formatUSD(val as number), label]}
-          labelFormatter={(label: unknown) => formatAxisDate(label as string)}
+          labelFormatter={(ts: unknown) => formatTooltipDate(ts as number)}
         />
         <Area
           type="monotone"

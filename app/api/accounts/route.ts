@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     accountId: account._id,
     value: currentValue,
     holdings: account.holdings ?? [],
+    date: body.date ?? new Date().toISOString().split("T")[0],
     recordedAt: new Date(),
   });
 
