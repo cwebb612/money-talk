@@ -41,6 +41,11 @@ export default function HoldingsEditor({ holdings, onChange }: HoldingsEditorPro
 
   async function fetchPrice(index: number, ticker: string) {
     if (!ticker) return;
+    if (ticker === "CASH") {
+      updateRow(index, "pricePerUnit", 1);
+      setFetchStatus((prev) => prev.map((s, i) => (i === index ? "idle" : s)));
+      return;
+    }
     setFetchStatus((prev) => prev.map((s, i) => (i === index ? "loading" : s)));
     try {
       const res = await fetch(`/api/quote/${encodeURIComponent(ticker)}`);
@@ -58,7 +63,7 @@ export default function HoldingsEditor({ holdings, onChange }: HoldingsEditorPro
       {holdings.map((holding, i) => (
         <div key={i} className="flex gap-2 items-center">
           <Input
-            placeholder="Ticker"
+            placeholder="Ticker or CASH"
             value={holding.ticker}
             onChange={(e) => updateRow(i, "ticker", e.target.value.toUpperCase())}
             onBlur={(e) => fetchPrice(i, e.target.value.toUpperCase())}

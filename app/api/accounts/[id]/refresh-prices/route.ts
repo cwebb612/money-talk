@@ -39,6 +39,9 @@ export async function POST(
 
   const updatedHoldings = await Promise.all(
     account.holdings.map(async (h) => {
+      if (h.ticker.toUpperCase() === "CASH") {
+        return { ticker: h.ticker, quantity: h.quantity, pricePerUnit: 1 };
+      }
       try {
         const quote = await yf.quote(h.ticker.toUpperCase());
         const price = quote.regularMarketPrice;
