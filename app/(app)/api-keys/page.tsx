@@ -31,13 +31,14 @@ export default function ApiKeysPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadKeys() {
-    const res = await fetch("/api/keys");
-    if (res.ok) setKeys(await res.json());
-    setLoading(false);
-  }
-
-  useEffect(() => { loadKeys(); }, []);
+  useEffect(() => {
+    fetch("/api/keys")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setKeys(data);
+        setLoading(false);
+      });
+  }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

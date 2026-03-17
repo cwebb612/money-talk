@@ -8,7 +8,7 @@
     "start": "next start -p 3033",
     "lint": "eslint",
     "test:integration": "playwright test",
-    "test:unit": "node --experimental-vm-modules node_modules/.bin/jest --testPathPattern=tests/unit"
+    "test:unit": "node --experimental-vm-modules node_modules/.bin/jest --testPathPatterns=tests/unit"
   },
   "dependencies": {
     "@scalar/nextjs-api-reference": "^0.10.3",
