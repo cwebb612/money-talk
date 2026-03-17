@@ -16,13 +16,12 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'bump:major')
       )
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Configure git
         run: |
