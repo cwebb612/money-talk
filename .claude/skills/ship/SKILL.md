@@ -1,6 +1,6 @@
 ---
+name: ship
 description: Run lint + tests, then commit and open a PR (branches off main automatically)
-allowed-tools: Bash(npm run lint:*), Bash(npm run test:unit:*), Bash(npx tsc:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git checkout:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(gh pr create:*)
 ---
 
 ## Context

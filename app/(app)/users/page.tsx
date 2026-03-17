@@ -34,17 +34,17 @@ export default function UsersPage() {
   const [editUsername, setEditUsername] = useState("");
   const [editPassword, setEditPassword] = useState("");
 
-  async function loadUsers() {
-    const res = await fetch("/api/users");
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data.users);
-      setCurrentUserId(data.currentUserId);
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    fetch("/api/users")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setUsers(data.users);
+          setCurrentUserId(data.currentUserId);
+        }
+        setLoading(false);
+      });
+  }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
