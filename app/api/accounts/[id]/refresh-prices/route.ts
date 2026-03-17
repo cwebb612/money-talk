@@ -33,8 +33,8 @@ export async function POST(
   const account = await Account.findById(new Types.ObjectId(id));
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
-  if (account.type !== "stock" && account.type !== "crypto") {
-    return NextResponse.json({ error: "Only stock and crypto accounts support price refresh" }, { status: 400 });
+  if (account.type !== "investment") {
+    return NextResponse.json({ error: "Only investment accounts support price refresh" }, { status: 400 });
   }
 
   const updatedHoldings = await Promise.all(

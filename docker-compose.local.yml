@@ -1,0 +1,12 @@
+services:
+  money-talk:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3033:3033"
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - MONGO_DB_NAME=${MONGO_DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - APP_USERNAME=${APP_USERNAME}
+      - APP_PASSWORD=${APP_PASSWORD}

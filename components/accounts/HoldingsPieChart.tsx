@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, PieSectorShapeProps, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { formatUSD } from "../../lib/utils/money";
 
-const COLORS = [
+const colors = [
   "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6",
   "#ef4444", "#06b6d4", "#f97316", "#ec4899",
 ];
@@ -18,6 +18,8 @@ interface Holding {
 interface Props {
   holdings: Holding[];
 }
+
+const CustomColors = (props: PieSectorShapeProps) => <Sector {...props} fill={colors[props.index % colors.length]} />;
 
 export default function HoldingsPieChart({ holdings }: Props) {
   const [open, setOpen] = useState(true);
@@ -57,10 +59,8 @@ export default function HoldingsPieChart({ holdings }: Props) {
                 outerRadius={90}
                 dataKey="value"
                 stroke="none"
+                shape={CustomColors}
               >
-                {data.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
               </Pie>
               <Tooltip
                 contentStyle={{
@@ -69,7 +69,7 @@ export default function HoldingsPieChart({ holdings }: Props) {
                   borderRadius: 8,
                   color: "var(--color-text)",
                 }}
-                formatter={(val: unknown) => [formatUSD(val as number), ""]}
+                formatter={(val, key) => [formatUSD(val as number), key]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -80,7 +80,7 @@ export default function HoldingsPieChart({ holdings }: Props) {
                 <div className="flex items-center gap-2">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                    style={{ backgroundColor: colors[i % colors.length] }}
                   />
                   <span style={{ color: "var(--color-text)" }}>{d.name}</span>
                 </div>

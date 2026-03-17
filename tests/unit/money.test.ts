@@ -13,9 +13,9 @@ describe("calculateAccountValue", () => {
     expect(calculateAccountValue({ type: "cash", balance: undefined, holdings: [] })).toBe(0);
   });
 
-  it("sums holdings for stock accounts", () => {
+  it("sums holdings for investment accounts", () => {
     const result = calculateAccountValue({
-      type: "stock",
+      type: "investment",
       holdings: [
         { ticker: "AAPL", quantity: 10, pricePerUnit: 190 },
         { ticker: "GOOG", quantity: 5, pricePerUnit: 100 },
@@ -24,22 +24,14 @@ describe("calculateAccountValue", () => {
     expect(result).toBe(2400);
   });
 
-  it("sums holdings for crypto accounts", () => {
-    const result = calculateAccountValue({
-      type: "crypto",
-      holdings: [{ ticker: "BTC", quantity: 0.5, pricePerUnit: 60000 }],
-    });
-    expect(result).toBe(30000);
-  });
-
-  it("returns 0 for stock account with empty holdings", () => {
-    expect(calculateAccountValue({ type: "stock", holdings: [] })).toBe(0);
+  it("returns 0 for investment account with empty holdings", () => {
+    expect(calculateAccountValue({ type: "investment", holdings: [] })).toBe(0);
   });
 
   it("handles holdings with 0 quantity", () => {
     expect(
       calculateAccountValue({
-        type: "stock",
+        type: "investment",
         holdings: [{ ticker: "AAPL", quantity: 0, pricePerUnit: 190 }],
       })
     ).toBe(0);
@@ -48,7 +40,7 @@ describe("calculateAccountValue", () => {
   it("handles holdings with 0 price", () => {
     expect(
       calculateAccountValue({
-        type: "stock",
+        type: "investment",
         holdings: [{ ticker: "AAPL", quantity: 10, pricePerUnit: 0 }],
       })
     ).toBe(0);
@@ -56,7 +48,7 @@ describe("calculateAccountValue", () => {
 
   it("handles multiple holdings", () => {
     const result = calculateAccountValue({
-      type: "crypto",
+      type: "investment",
       holdings: [
         { ticker: "BTC", quantity: 1, pricePerUnit: 50000 },
         { ticker: "ETH", quantity: 10, pricePerUnit: 3000 },

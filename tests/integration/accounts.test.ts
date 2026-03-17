@@ -25,12 +25,12 @@ test.describe("Account Management", () => {
     await expect(page.locator("text=$5,000.00")).toBeVisible();
   });
 
-  test("create a stock account with holdings and see calculated value", async ({ page }) => {
+  test("create an investment account with holdings and see calculated value", async ({ page }) => {
     await login(page);
 
     await page.click('a:has-text("Add Account")');
-    await page.fill('input[placeholder="e.g. Chase Checking"]', "Fidelity Stocks");
-    await page.click('button:has-text("Stock")');
+    await page.fill('input[placeholder="e.g. Chase Checking"]', "Fidelity Investments");
+    await page.click('button:has-text("Investment")');
     await page.click('button:has-text("+ Add holding")');
 
     const tickerInput = page.locator('input[placeholder="Ticker"]').first();
@@ -43,7 +43,7 @@ test.describe("Account Management", () => {
 
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL("/");
-    await expect(page.locator("text=Fidelity Stocks")).toBeVisible();
+    await expect(page.locator("text=Fidelity Investments")).toBeVisible();
     await expect(page.locator("text=$2,000.00")).toBeVisible();
   });
 });

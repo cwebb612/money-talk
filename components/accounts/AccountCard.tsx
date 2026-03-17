@@ -5,8 +5,7 @@ import { formatUSD } from "../../lib/utils/money";
 
 const TYPE_LABELS: Record<string, string> = {
   cash: "Cash",
-  stock: "Stock",
-  crypto: "Crypto",
+  investment: "Investment",
   liability: "Liability",
 };
 

@@ -25,8 +25,7 @@ interface AccountFormProps {
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
   { value: "cash", label: "Cash" },
-  { value: "stock", label: "Stock" },
-  { value: "crypto", label: "Crypto" },
+  { value: "investment", label: "Investment" },
   { value: "liability", label: "Liability" },
 ];
 

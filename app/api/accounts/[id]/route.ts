@@ -74,13 +74,15 @@ export async function PUT(
 
   await account.save();
 
-  await Activity.create({
-    accountId: account._id,
-    value: submittedValue,
-    holdings: submittedHoldings,
-    date: submittedDate,
-    recordedAt: submittedRecordedAt,
-  });
+  await Activity.findOneAndUpdate(
+    { accountId: account._id, date: submittedDate },
+    {
+      value: submittedValue,
+      holdings: submittedHoldings,
+      recordedAt: submittedRecordedAt,
+    },
+    { upsert: true }
+  );
 
   return NextResponse.json({ ...account.toObject(), _id: account._id.toString() });
 }

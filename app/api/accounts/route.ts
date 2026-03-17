@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "name and type are required" }, { status: 400 });
   }
 
-  const validTypes = ["cash", "stock", "crypto", "liability"];
+  const validTypes = ["cash", "investment", "liability"];
   if (!validTypes.includes(body.type)) {
     return NextResponse.json({ error: "Invalid account type" }, { status: 400 });
   }
@@ -44,12 +44,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "balance is required for cash and liability accounts" }, { status: 400 });
   }
 
-  if ((body.type === "stock" || body.type === "crypto") && !Array.isArray(body.holdings)) {
-    return NextResponse.json({ error: "holdings array is required for stock and crypto accounts" }, { status: 400 });
+  if (body.type === "investment" && !Array.isArray(body.holdings)) {
+    return NextResponse.json({ error: "holdings array is required for investment accounts" }, { status: 400 });
   }
 
   await connect();
-  const currentValue = calculateAccountValue(body);
 
   const account = await Account.create({
     name: body.name,
@@ -57,8 +56,17 @@ export async function POST(request: NextRequest) {
     institutionUrl: body.institutionUrl ?? undefined,
     balance: body.balance ?? undefined,
     holdings: body.holdings ?? [],
-    currentValue,
+    currentValue: 0,
   });
+
+  const currentValue = calculateAccountValue({
+    type: account.type,
+    balance: account.balance,
+    holdings: account.holdings,
+  });
+
+  account.currentValue = currentValue;
+  await account.save();
 
   await Activity.create({
     accountId: account._id,

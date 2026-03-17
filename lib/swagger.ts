@@ -305,7 +305,7 @@ export const getApiDocs = async () => {
               name: { type: "string", example: "Checking" },
               type: {
                 type: "string",
-                enum: ["cash", "stock", "crypto", "liability"],
+                enum: ["cash", "investment", "liability"],
               },
               currentValue: { type: "number", example: 5200.0 },
               balance: {
@@ -316,7 +316,7 @@ export const getApiDocs = async () => {
               holdings: {
                 type: "array",
                 items: { $ref: "#/components/schemas/Holding" },
-                description: "Present for stock and crypto accounts.",
+                description: "Present for investment accounts.",
               },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" },

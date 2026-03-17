@@ -29,7 +29,7 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
   const [editing, setEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const isStockLike = account.type === "stock" || account.type === "crypto";
+  const isInvestment = account.type === "investment";
 
   async function handleRefreshPrices() {
     setRefreshing(true);
@@ -80,7 +80,7 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
           </h3>
           {!editing && (
             <div className="flex items-center gap-2">
-              {isStockLike && (
+              {isInvestment && (
                 <button
                   onClick={handleRefreshPrices}
                   disabled={refreshing}

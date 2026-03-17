@@ -14,24 +14,43 @@ npx tsc --noEmit     # type check without building
 npm run test:integration   # Playwright e2e tests (tests/integration/)
 npm run test:unit          # Jest unit tests (tests/unit/)
 
-# Docker
-docker compose up -d       # build and start the app (env vars must be set in the host shell)
+# Docker — with bundled MongoDB (default)
+docker compose up -d       # spins up MongoDB + the app together
 docker compose down        # stop
+
+# Docker — bring your own MongoDB
+docker compose -f docker-compose.no-mongo.yml up -d   # app only; point MONGO_URL at an external DB
+docker compose -f docker-compose.no-mongo.yml down
 ```
 
 ## Environment Variables
 
-Required vars:
+### Default setup — bundled MongoDB (`docker-compose.yml`)
+
+Uses `MONGO_USERNAME` / `MONGO_PASSWORD` to initialise MongoDB and build the connection URL internally. Copy `.env.example` to `.env`.
 
 | Variable | Description |
 |---|---|
-| `MONGO_URL` | MongoDB connection string (`mongodb://USERNAME:PASSWORD@IP:PORT`) |
-| `MONGO_DB_NAME` | MongoDB database name — used as both the target database and auth source |
+| `MONGO_USERNAME` | MongoDB root username (created on first run) |
+| `MONGO_PASSWORD` | MongoDB root password (created on first run) |
+| `MONGO_DB_NAME` | Database name |
 | `JWT_SECRET` | Secret for signing JWT tokens (min 32 chars) |
-| `APP_USERNAME` | Login username |
+| `APP_USERNAME` | App login username |
 | `APP_PASSWORD` | Plain text password — bcrypt-hashed on first startup, never stored plain |
 
-For local dev, copy `.env.example` to `.env`. For Docker, export these vars in your shell before running `docker compose up` — the compose file reads them from the host environment and injects them at runtime. The `.env` file is excluded from the Docker build context.
+### External MongoDB setup (`docker-compose.no-mongo.yml`)
+
+Use this when you already have a MongoDB instance running elsewhere. Copy `.env.example.no-mongo` to `.env`.
+
+| Variable | Description |
+|---|---|
+| `MONGO_URL` | Full connection string (`mongodb://USERNAME:PASSWORD@HOST:PORT`) |
+| `MONGO_DB_NAME` | Database name — used as both the target database and auth source |
+| `JWT_SECRET` | Secret for signing JWT tokens (min 32 chars) |
+| `APP_USERNAME` | App login username |
+| `APP_PASSWORD` | Plain text password — bcrypt-hashed on first startup, never stored plain |
+
+For local dev, copy the relevant `.env.example` to `.env`. The `.env` file is excluded from the Docker build context.
 
 ## Architecture
 
@@ -46,7 +65,7 @@ For local dev, copy `.env.example` to `.env`. For Docker, export these vars in y
 Four MongoDB collections via Mongoose (`lib/db/models/`):
 
 - **users** — multi-user; username + bcrypt passwordHash + `lastLoginAt`. All users are admins. First user seeded from `APP_USERNAME`/`APP_PASSWORD` env vars; subsequent users created via the Users page.
-- **accounts** — `type` enum: `cash | stock | crypto | liability`. Cash/liability have a `balance` field. Stock/crypto have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save. Shared across all users — no `userId` scoping.
+- **accounts** — `type` enum: `cash | investment | liability`. Cash/liability have a `balance` field. Investment accounts have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save. Shared across all users — no `userId` scoping.
 - **activity** — append-only time-series log. One entry is written every time an account is created or reconciled. Used to build the net worth graph. Never updated or deleted. Shared across all users — no `userId` scoping.
 - **apikeys** — API key records: `name`, `key` (plaintext), `prefix` (first 11 chars for display), `lastUsedAt`. Scoped to `userId`.
 
@@ -86,4 +105,4 @@ Use these variables for all new UI rather than hardcoding hex values.
 - `lib/auth/session.ts` — `signToken`, `verifyToken`, `setSessionCookie`, `clearSessionCookie`
 - `lib/auth/password.ts` — `hashPassword`, `comparePassword` (bcryptjs, saltRounds: 10)
 - `lib/auth/apiKey.ts` — `generateApiKey()`, `hashApiKey()`, `validateApiKey(request)` (SHA256-based)
-- `lib/swagger.ts` — `getApiDocs()` builds the OpenAPI spec via `next-swagger-doc`; JSDoc `@swagger` annotations live in the route files themselves
+- `lib/swagger.ts` — `getApiDocs()` builds the OpenAPI spec via `next-swagger-doc`; all paths are defined inline in the spec definition (not via JSDoc scanning); `app/api/_docs/routes.ts` is an empty placeholder that satisfies the required `apiFolder` parameter

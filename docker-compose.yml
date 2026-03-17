@@ -1,11 +1,27 @@
-services:
-  money-talk:
-    build: .
-    ports:
-      - "3033:3033"
-    environment:
-      - MONGO_URL=${MONGO_URL}
-      - MONGO_DB_NAME=${MONGO_DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - APP_USERNAME=${APP_USERNAME}
-      - APP_PASSWORD=${APP_PASSWORD}
+  services:
+    mongo:
+      image: mongo:8
+      restart: unless-stopped
+      volumes:
+        - mongo_data:/data/db
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+        - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+        - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+
+    money-talk:
+      image: chartester/money-talk
+      restart: unless-stopped
+      ports:
+        - "3033:3033"
+      depends_on:
+        - mongo
+      environment:
+        - MONGO_URL=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+        - MONGO_DB_NAME=${MONGO_DB_NAME}
+        - JWT_SECRET=${JWT_SECRET}
+        - APP_USERNAME=${APP_USERNAME}
+        - APP_PASSWORD=${APP_PASSWORD}
+
+  volumes:
+    mongo_data:

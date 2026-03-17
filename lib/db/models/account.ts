@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-export type AccountType = "cash" | "stock" | "crypto" | "liability";
+export type AccountType = "cash" | "investment" | "liability";
 
 export interface IHolding {
   ticker: string;
@@ -33,7 +33,7 @@ const accountSchema = new Schema<IAccount>(
     name: { type: String, required: true },
     type: {
       type: String,
-      enum: ["cash", "stock", "crypto", "liability"],
+      enum: ["cash", "investment", "liability"],
       required: true,
     },
     institutionUrl: { type: String },

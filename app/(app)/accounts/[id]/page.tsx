@@ -13,7 +13,7 @@ interface AccountData {
   _id: string;
   userId: string;
   name: string;
-  type: "cash" | "stock" | "crypto" | "liability";
+  type: "cash" | "investment" | "liability";
   institutionUrl?: string;
   balance?: number;
   holdings: { ticker: string; quantity: number; pricePerUnit: number }[];
@@ -118,7 +118,7 @@ export default function AccountDetailPage() {
         <Card>
           <NetWorthChart data={chartData} label="Value" />
         </Card>
-        {(account.type === "stock" || account.type === "crypto") && (
+        {account.type === "investment" && (
           <HoldingsPieChart holdings={account.holdings} />
         )}
         <AccountDetail account={account} onUpdate={handleUpdate} onRefreshPrices={handleRefreshPrices} onDelete={handleDelete} />
