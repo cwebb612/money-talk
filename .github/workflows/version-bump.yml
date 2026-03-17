@@ -1,8 +1,9 @@
-name: Version Bump on Merge
+name: PR Merge Versioning
 
 on:
   pull_request:
-    types: [closed]
+    types:
+      - closed
     branches: [main]
 
 jobs:
@@ -40,7 +41,8 @@ jobs:
           fi
 
       - name: Bump version
-        run: npm version ${{ steps.bump.outputs.level }} -m "chore: release v%s"
+        run: |
+          npm version ${{ steps.bump.outputs.level }} -m "chore: release v%s"
 
       - name: Push commit and tag
         run: git push --follow-tags
