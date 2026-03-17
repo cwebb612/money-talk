@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Run lint + tests, then commit and open a PR (branches off main automatically)
+description: Run checks, optionally commit, push, and open a PR with a bump label
 ---
 
 ## Context
@@ -16,21 +16,23 @@ description: Run lint + tests, then commit and open a PR (branches off main auto
    - `npm run lint`
    - `npx tsc --noEmit`
    - `npm run test:unit`
-   If any check fails, stop immediately and report the failure output to the user. Do not proceed to commit or PR.
+   If any check fails, stop immediately and report the failure output to the user. Do not proceed.
 
 2. **Branch** — if the current branch is `main`, create and check out a new branch with a short kebab-case name derived from the changes (e.g. `feat/investment-account-type`).
 
-3. **Commit** — stage all modified tracked files (`git add -u`) and create a single commit with a concise message that summarises what changed. End the commit message with:
-   `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+3. **Commit** — only if there are uncommitted changes (staged or unstaged tracked files):
+   - Stage all modified files with `git add .`
+   - Create a single commit with a concise message summarising what changed.
+   - If the working tree is already clean, skip this step silently.
 
-4. **Push** — push the branch to origin with `-u`.
+4. **Push** — push the branch to origin.
 
 5. **Open PR** — run `gh pr create` with:
    - A short title (under 70 chars)
-   - A body built from the actual diff and commit history that covers:
-     - What changed and why
-     - Any notable decisions or trade-offs
-     - A short test plan checklist
-   - End the body with: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+   - A body covering what is in @.github/pull_request_template.md
+   - A bump label applied via `--label`: assess the changes and pick one:
+     - `bump:patch` — bug fixes, tweaks, dependency updates, config changes
+     - `bump:minor` — new features, non-breaking additions
+     - `bump:major` — breaking changes
 
 Do all of the above sequentially. After each step report a one-line status to the user, then return the final PR URL when done.

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PieChart, Pie, PieSectorShapeProps, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { formatUSD } from "../../lib/utils/money";
+import { ChevronUp, ChevronDown } from "lucide-react"
 
 const colors = [
   "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6",
@@ -42,7 +43,7 @@ export default function AssetPieChart({ accounts }: Props) {
           Asset Breakdown
         </h2>
         <span className="text-xs px-2 py-1" style={{ color: "var(--color-muted)" }}>
-          {open ? "▲" : "▼"}
+          {open ? <ChevronUp /> : <ChevronDown />}
         </span>
       </button>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import NetWorthHeader from "./NetWorthHeader";
 import NetWorthChart from "./NetWorthChart";
 import { formatUSD } from "../../lib/utils/money";
+import { ChevronUp, ChevronDown } from "lucide-react"
 
 type Preset = "1M" | "6M" | "YTD" | "1Y" | "5Y" | "All";
 
@@ -62,7 +63,7 @@ export default function NetWorthCard({ value, updatedAt, chartData }: Props) {
       >
         <NetWorthHeader value={value} updatedAt={updatedAt} />
         <span className="text-xs mt-1 px-2 py-1" style={{ color: "var(--color-muted)" }}>
-          {open ? "▲" : "▼"}
+          {open ? <ChevronUp /> : <ChevronDown />}
         </span>
       </button>
 
