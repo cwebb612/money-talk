@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Heart, Moon, User, Users, Key, SquareArrowRight } from "lucide-react";
+import { Heart, Moon, User, Users, Key, SquareArrowRight, Calculator } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -63,6 +63,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             style={{ backgroundColor: "var(--color-yellow)" }}
           >
             + Add Account
+          </Link>
+
+          <Link
+            href="/analytics"
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 32,
+              height: 32,
+              border: "1px solid var(--color-border)",
+              backgroundColor: pathname === "/analytics" ? "var(--color-border)" : "transparent",
+              color: pathname === "/analytics" ? "var(--color-yellow)" : "var(--color-muted)",
+            }}
+            aria-label="Analytics"
+          >
+            <Calculator size={16} />
           </Link>
 
           <div ref={menuRef} style={{ position: "relative" }}>
