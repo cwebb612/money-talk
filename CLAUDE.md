@@ -80,12 +80,13 @@ Four MongoDB collections via Mongoose (`lib/db/models/`):
 
 ### Net worth graph
 
-The dashboard aggregates the `activity` collection server-side: for each calendar day, take the latest snapshot per account, then sum assets and subtract liabilities. This produces the `{date, value}[]` array fed to `NetWorthChart` (Recharts `LineChart`).
+The dashboard aggregates the `activity` collection server-side: for each calendar day, take the latest snapshot per account, then sum assets and subtract liabilities. This produces the `{date, value}[]` array fed to `NetWorthChart` (Recharts `LineChart`). The same aggregation is reused by the analytics page (`app/(app)/analytics/page.tsx`), which also builds a per-account history array for the per-account chart mode.
 
 ### Route groups
 
 - `app/(auth)/` — unauthenticated pages (login)
 - `app/(app)/` — auth-gated pages with the nav shell layout
+- `app/(app)/analytics/` — analytics page; `AnalyticsCard` (collapsible wrapper), `TrendsCard` (history chart + stats), `PredictionsCard` (projection with horizon/rate/uncertainty controls) live in `components/analytics/`
 - `app/api-doc/` — Scalar API reference UI (public; path starts with `api` so proxy skips it); served as a route handler, not a page
 - `app/api/openapi.json/` — serves the OpenAPI spec as JSON; consumed by the Scalar UI
 - `app/api/v1/` — public REST API, gated by `X-API-Key` header
