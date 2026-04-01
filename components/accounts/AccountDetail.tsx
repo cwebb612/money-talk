@@ -4,6 +4,7 @@ import { useState } from "react";
 import Card from "../ui/Card";
 import ExternalLink from "../ui/ExternalLink";
 import AccountForm, { AccountFormData } from "./AccountForm";
+import NetWorthChart from "../dashboard/NetWorthChart";
 import { AccountType } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
 import { X } from "lucide-react";
@@ -22,12 +23,14 @@ interface AccountDoc {
 
 interface AccountDetailProps {
   account: AccountDoc;
+  lastUpdated: string | null;
+  chartData: { date: string; value: number }[];
   onUpdate: (data: AccountFormData) => Promise<void>;
   onRefreshPrices: () => Promise<void>;
   onDelete: () => Promise<void>;
 }
 
-export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDelete }: AccountDetailProps) {
+export default function AccountDetail({ account, lastUpdated, chartData, onUpdate, onRefreshPrices, onDelete }: AccountDetailProps) {
   const [editing, setEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -54,13 +57,13 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
               {account.name}
             </h2>
             <span
-              className="text-sm px-2 py-0.5 rounded-full"
+              className="text-sm px-3 py-0.5 rounded-full"
               style={{ backgroundColor: "var(--color-border)", color: "var(--color-text)" }}
             >
               {account.type}
@@ -75,12 +78,25 @@ export default function AccountDetail({ account, onUpdate, onRefreshPrices, onDe
             <p className="text-2xl font-bold" style={{ color: "var(--color-yellow)" }}>
               {formatUSD(account.currentValue)}
             </p>
+            {lastUpdated && (() => {
+              const [y, m, d] = lastUpdated.split("-").map(Number);
+              const date = new Date(y, m - 1, d);
+              const stale = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24) > 30;
+              return (
+                <p className="text-xs" style={{ color: stale ? "#ef4444" : "var(--color-muted)" }}>
+                  {date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              );
+            })()}
             {account.institutionUrl && (
               <ExternalLink href={account.institutionUrl} className="text-sm mt-1">
                 Go To Account
               </ExternalLink>
             )}
           </div>
+        </div>
+        <div style={{ borderTop: "1px solid var(--color-border)", marginLeft: "-1.5rem", marginRight: "-1.5rem", paddingTop: "1rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
+          <NetWorthChart data={chartData} label="Value" />
         </div>
       </Card>
 

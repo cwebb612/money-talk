@@ -6,7 +6,8 @@ interface NetWorthHeaderProps {
 }
 
 export default function NetWorthHeader({ value, updatedAt }: NetWorthHeaderProps) {
-  const formatted = new Date(updatedAt).toLocaleDateString("en-US", {
+  const [y, m, d] = updatedAt.split("-").map(Number);
+  const formatted = new Date(y, m - 1, d).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",

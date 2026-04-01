@@ -5,8 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AccountDetail from "../../../../components/accounts/AccountDetail";
 import { AccountFormData } from "../../../../components/accounts/AccountForm";
-import Card from "../../../../components/ui/Card";
-import NetWorthChart from "../../../../components/dashboard/NetWorthChart";
 import HoldingsPieChart from "../../../../components/accounts/HoldingsPieChart";
 
 interface AccountData {
@@ -35,7 +33,9 @@ export default function AccountDetailPage() {
   function fetchActivity() {
     fetch(`/api/accounts/${id}/activity`)
       .then((r) => r.json())
-      .then(setChartData)
+      .then((data: { date: string; value: number }[]) => {
+        setChartData(data);
+      })
       .catch(() => {});
   }
 
@@ -116,13 +116,17 @@ export default function AccountDetailPage() {
         </Link>
       </div>
       <div className="flex flex-col gap-6">
-        <Card>
-          <NetWorthChart data={chartData} label="Value" />
-        </Card>
+        <AccountDetail
+          account={account}
+          lastUpdated={chartData.length > 0 ? chartData[chartData.length - 1].date : null}
+          chartData={chartData}
+          onUpdate={handleUpdate}
+          onRefreshPrices={handleRefreshPrices}
+          onDelete={handleDelete}
+        />
         {account.type === "investment" && (
           <HoldingsPieChart holdings={account.holdings} />
         )}
-        <AccountDetail account={account} onUpdate={handleUpdate} onRefreshPrices={handleRefreshPrices} onDelete={handleDelete} />
       </div>
     </div>
   );

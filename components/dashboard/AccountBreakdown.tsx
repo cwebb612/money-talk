@@ -2,7 +2,7 @@ import AccountCard from "../accounts/AccountCard";
 import { IAccount } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
 
-type AccountDoc = Pick<IAccount, "_id" | "name" | "type" | "currentValue"> & { _id: string };
+type AccountDoc = Pick<IAccount, "_id" | "name" | "type" | "currentValue"> & { _id: string; lastUpdated?: string | null };
 
 interface AccountBreakdownProps {
   accounts: AccountDoc[];
