@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   await connect();
-  const user = await User.findOne({ username: body.username });
+  const user = await User.findOne({ username: { $regex: new RegExp(`^${body.username}$`, "i") } });
 
   if (!user) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

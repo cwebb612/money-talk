@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   await connect();
-  const existing = await User.findOne({ username: body.username.trim() });
+  const existing = await User.findOne({ username: { $regex: new RegExp(`^${body.username.trim()}$`, "i") } });
   if (existing) {
     return NextResponse.json({ error: "Username already taken" }, { status: 409 });
   }

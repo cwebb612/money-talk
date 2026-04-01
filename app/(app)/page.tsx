@@ -46,8 +46,13 @@ async function getDashboardData() {
   );
   const lastUpdated =
     activities.length > 0
-      ? activities[activities.length - 1].recordedAt.toISOString()
-      : new Date().toISOString();
+      ? activities[activities.length - 1].date
+      : new Date().toLocaleDateString("en-CA");
+
+  const accountLastUpdated = new Map<string, string>();
+  for (const activity of activities) {
+    accountLastUpdated.set(activity.accountId.toString(), activity.date);
+  }
 
   return {
     accounts: accounts.map((a) => ({
@@ -64,6 +69,7 @@ async function getDashboardData() {
       currentValue: a.currentValue,
       createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt),
       updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : String(a.updatedAt),
+      lastUpdated: accountLastUpdated.get(a._id.toString()) ?? null,
     })),
     chartData,
     currentNetWorth,
