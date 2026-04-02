@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import connect from "../../../lib/db/mongodb";
 import Account from "../../../lib/db/models/account";
 import Activity from "../../../lib/db/models/activity";
