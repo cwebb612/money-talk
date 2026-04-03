@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
-import { formatUSD } from "../../lib/utils/money";
+import { formatUSD, parseNumeric, formatNumeric } from "../../lib/utils/money";
 import { X } from "lucide-react";
 
 export interface Holding {
@@ -23,15 +23,20 @@ export default function HoldingsEditor({ holdings, onChange }: HoldingsEditorPro
   const [fetchStatus, setFetchStatus] = useState<FetchStatus[]>(
     () => holdings.map(() => "idle")
   );
+  const [displayQtys, setDisplayQtys] = useState<string[]>(
+    () => holdings.map((h) => formatNumeric(h.quantity))
+  );
 
   function addRow() {
     onChange([...holdings, { ticker: "", quantity: 0, pricePerUnit: 0 }]);
     setFetchStatus((prev) => [...prev, "idle"]);
+    setDisplayQtys((prev) => [...prev, ""]);
   }
 
   function removeRow(index: number) {
     onChange(holdings.filter((_, i) => i !== index));
     setFetchStatus((prev) => prev.filter((_, i) => i !== index));
+    setDisplayQtys((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateRow(index: number, field: keyof Holding, value: string | number) {
@@ -70,10 +75,15 @@ export default function HoldingsEditor({ holdings, onChange }: HoldingsEditorPro
             className="w-24"
           />
           <Input
-            type="number"
+            type="text"
+            inputMode="decimal"
             placeholder="Qty"
-            value={holding.quantity || ""}
-            onChange={(e) => updateRow(i, "quantity", parseFloat(e.target.value) || 0)}
+            value={displayQtys[i] ?? ""}
+            onChange={(e) => {
+              setDisplayQtys((prev) => prev.map((s, j) => j === i ? e.target.value : s));
+              updateRow(i, "quantity", parseNumeric(e.target.value));
+            }}
+            onBlur={() => setDisplayQtys((prev) => prev.map((s, j) => j === i ? formatNumeric(parseNumeric(s)) : s))}
             className="w-24"
           />
           <span className="text-xs w-24" style={{ color: "var(--color-muted)" }}>
