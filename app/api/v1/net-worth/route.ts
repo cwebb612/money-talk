@@ -41,6 +41,7 @@ import { validateApiKey } from "../../../../lib/auth/apiKey";
 import connect from "../../../../lib/db/mongodb";
 import Activity from "../../../../lib/db/models/activity";
 import Account from "../../../../lib/db/models/account";
+import { buildNetWorthSeries } from "../../../../lib/utils/netWorth";
 
 export async function GET(request: NextRequest) {
   const userId = await validateApiKey(request);
@@ -65,29 +66,6 @@ export async function GET(request: NextRequest) {
 
   const activities = await Activity.find(matchStage).sort({ recordedAt: 1 }).lean();
 
-  const dayMap = new Map<string, Map<string, number>>();
-  for (const activity of activities) {
-    const day = activity.date;
-    if (!dayMap.has(day)) dayMap.set(day, new Map());
-    dayMap.get(day)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  const allDays = [...dayMap.keys()].sort();
-  const latestValues = new Map<string, number>();
-  const result: { date: string; value: number }[] = [];
-
-  for (const day of allDays) {
-    const dayEntries = dayMap.get(day)!;
-    dayEntries.forEach((value, accountId) => latestValues.set(accountId, value));
-
-    let netWorth = 0;
-    latestValues.forEach((value, accountId) => {
-      const type = accountTypes.get(accountId);
-      netWorth += type === "liability" ? -value : value;
-    });
-
-    result.push({ date: day, value: netWorth });
-  }
-
+  const result = buildNetWorthSeries(activities, accountTypes);
   return NextResponse.json(result);
 }

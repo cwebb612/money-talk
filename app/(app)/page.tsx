@@ -7,6 +7,7 @@ import Activity from "../../lib/db/models/activity";
 import NetWorthCard from "../../components/dashboard/NetWorthCard";
 import AssetPieChart from "../../components/dashboard/AssetPieChart";
 import AccountBreakdown from "../../components/dashboard/AccountBreakdown";
+import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 
 async function getDashboardData() {
   await connect();
@@ -15,30 +16,7 @@ async function getDashboardData() {
   const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
 
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
-  const dayMap = new Map<string, Map<string, number>>();
-
-  for (const activity of activities) {
-    const day = activity.date;
-    if (!dayMap.has(day)) dayMap.set(day, new Map());
-    dayMap.get(day)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  const allDays = [...dayMap.keys()].sort();
-  const latestValues = new Map<string, number>();
-  const chartData: { date: string; value: number }[] = [];
-
-  for (const day of allDays) {
-    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
-
-    let netWorth = 0;
-    latestValues.forEach((value, accountId) => {
-      const type = accountTypes.get(accountId);
-      if (type === "liability") netWorth -= value;
-      else if (type != null) netWorth += value;
-    });
-
-    chartData.push({ date: day, value: netWorth });
-  }
+  const chartData = buildNetWorthSeries(activities, accountTypes);
 
   const currentNetWorth = accounts.reduce(
     (sum, a) => sum + (a.type === "liability" ? -a.currentValue : a.currentValue),
