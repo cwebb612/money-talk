@@ -22,64 +22,15 @@ interface ChartPoint {
   timestamp: number;
   actual?: number;
   projection?: number;
-  bandLow?: number;
-  bandWidth?: number;
 }
 
 // Inflation-adjusted historical S&P 500 average annual return
 const SP500_AVG = 7;
 const RATE_MAX  = 20;
-const MS_PER_MONTH = (365.25 / 12) * 86400000;
-
-type Lookback = "3M" | "6M" | "1Y" | "3Y" | "All";
-const LOOKBACKS: Lookback[] = ["3M", "6M", "1Y", "3Y", "All"];
-
-function getLookbackStartMs(lookback: Lookback): number | null {
-  const now = new Date();
-  switch (lookback) {
-    case "3M":  return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).getTime();
-    case "6M":  return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).getTime();
-    case "1Y":  return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime();
-    case "3Y":  return new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()).getTime();
-    case "All": return null;
-  }
-}
 
 function dateToTimestamp(dateStr: string): number {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(year, month - 1, day).getTime();
-}
-
-function toDays(ms: number): number {
-  return ms / 86400000;
-}
-
-interface RegressionResult {
-  logSlope: number; // daily log-growth rate (ln(value)/day)
-  cagr: number;     // compound annual growth rate as a decimal (e.g. 0.083 = 8.3%)
-  sigma: number;    // std dev of log residuals — drives prediction interval width
-}
-
-// Log-linear regression: fits log(y) = logSlope * x + intercept.
-// The slope is a daily percentage growth rate; exp(slope * 365.25) - 1 = CAGR.
-// Residuals in log-space give sigma, which feeds statistically grounded uncertainty bands.
-function runRegression(data: { date: string; value: number }[]): RegressionResult | null {
-  const valid = data.filter((d) => d.value > 0);
-  const points = valid.map((d) => ({ x: toDays(dateToTimestamp(d.date)), y: Math.log(d.value) }));
-  const n = points.length;
-  if (n < 2) return null;
-  const sumX  = points.reduce((s, p) => s + p.x, 0);
-  const sumY  = points.reduce((s, p) => s + p.y, 0);
-  const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
-  const sumXX = points.reduce((s, p) => s + p.x * p.x, 0);
-  const denom = n * sumXX - sumX * sumX;
-  if (denom === 0) return null;
-  const logSlope  = (n * sumXY - sumX * sumY) / denom;
-  const intercept = (sumY - logSlope * sumX) / n;
-  const residuals = points.map((p) => p.y - (logSlope * p.x + intercept));
-  const sigma     = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / Math.max(n - 2, 1));
-  const cagr      = Math.exp(logSlope * 365.25) - 1;
-  return { logSlope, cagr, sigma };
 }
 
 function getRateMood(rate: number): { emoji: string; label: string; color: string } {
@@ -104,88 +55,84 @@ function formatTooltipDate(ts: unknown): string {
   });
 }
 
+const MS_PER_YEAR = 365.25 * 86400000;
+
+/** Average monthly net-worth change over the most recent 12 months (or all data). */
+function estimateMonthlySavings(data: { date: string; value: number }[]): number {
+  if (data.length < 2) return 0;
+  const cutoff = Date.now() - MS_PER_YEAR;
+  const window = data.filter((d) => dateToTimestamp(d.date) >= cutoff);
+  const pts    = window.length >= 2 ? window : data;
+  const days = (dateToTimestamp(pts[pts.length - 1].date) - dateToTimestamp(pts[0].date)) / 86400000;
+  if (days < 1) return 0;
+  const dailyChange = (pts[pts.length - 1].value - pts[0].value) / days;
+  return Math.round(dailyChange * (365.25 / 12));
+}
+
 export default function PredictionsCard({ chartData }: Props) {
   const [years, setYears] = useState(10);
-  const [includeHistory, setIncludeHistory] = useState(true);
-  const [lookback, setLookback] = useState<Lookback>("All");
-  const [includeRange, setIncludeRange] = useState(true);
   const [annualRate, setAnnualRate] = useState(SP500_AVG);
+  const [includeContributions, setIncludeContributions] = useState(false);
+  const [contributionInput, setContributionInput] = useState<string>("");
 
   const todayTs = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   }, []);
 
-  // Regression uses only the lookback window to estimate growth rate.
-  // Falls back to all data if the window contains fewer than 2 points.
-  const regressionData = useMemo(() => {
-    const startMs = getLookbackStartMs(lookback);
-    if (!startMs) return chartData;
-    const filtered = chartData.filter((d) => dateToTimestamp(d.date) >= startMs);
-    return filtered.length >= 2 ? filtered : chartData;
-  }, [chartData, lookback]);
+  const suggestedMonthly = useMemo(() => estimateMonthlySavings(chartData), [chartData]);
 
-  const reg = useMemo(() => runRegression(regressionData), [regressionData]);
+  // Resolve the monthly contribution to use: text input overrides suggestion
+  const monthlyContribution = useMemo(() => {
+    if (!includeContributions) return 0;
+    const parsed = parseFloat(contributionInput.replace(/[^0-9.-]/g, ""));
+    if (!isNaN(parsed) && contributionInput.trim() !== "") return parsed;
+    return suggestedMonthly;
+  }, [includeContributions, contributionInput, suggestedMonthly]);
 
-  const { chartPoints, finalProjected, finalLow, finalHigh } = useMemo(() => {
-    const empty = { chartPoints: [], finalProjected: null, finalLow: null, finalHigh: null };
+  const { chartPoints, finalProjected } = useMemo(() => {
+    const empty = { chartPoints: [] as ChartPoint[], finalProjected: null as number | null };
     if (chartData.length === 0) return empty;
 
-    const lastPoint      = chartData[chartData.length - 1];
-    const lastTs         = dateToTimestamp(lastPoint.date);
-    const lastValue      = lastPoint.value;
-    const logSlopePerDay = includeHistory && reg ? reg.logSlope : 0;
-    const sigma          = reg?.sigma ?? 0;
-    const monthlyRate    = annualRate / 100 / 12;
-    const totalMonths    = years * 12;
+    const lastPoint = chartData[chartData.length - 1];
+    const lastValue = lastPoint.value;
+    const annualSavings = monthlyContribution * 12;
+    const rate = annualRate / 100;
 
+    // Build history points
     const history: ChartPoint[] = chartData.map((d) => ({
       timestamp: dateToTimestamp(d.date),
       actual: d.value,
     }));
 
+    // Build yearly projection using: Year N = (Year N-1 + annualSavings) × (1 + rate)
+    const lastTs     = dateToTimestamp(lastPoint.date);
     const projection: ChartPoint[] = [];
-    for (let m = 0; m <= totalMonths; m++) {
-      const ts   = lastTs + m * MS_PER_MONTH;
-      const days = toDays(m * MS_PER_MONTH);
-      // Historical trend (exponential) * investment return (compound)
-      const value = lastValue * Math.exp(logSlopePerDay * days) * Math.pow(1 + monthlyRate, m);
-      // Log-normal prediction interval: uncertainty grows as sigma * sqrt(months)
-      const logHalf  = includeRange && sigma > 0 ? sigma * Math.sqrt(m) : 0;
-      const bandHalf = logHalf > 0 ? value * (Math.exp(logHalf) - 1) : 0;
-      projection.push({
-        timestamp: ts,
-        projection: value,
-        bandLow:   includeRange ? value - bandHalf : undefined,
-        bandWidth: includeRange ? bandHalf * 2 : undefined,
-      });
+    let netWorth = lastValue;
+    for (let y = 0; y <= years; y++) {
+      projection.push({ timestamp: lastTs + y * MS_PER_YEAR, projection: netWorth });
+      netWorth = (netWorth + annualSavings) * (1 + rate);
     }
 
-    // Anchor last history point so both series connect visually
+    // Anchor last history point so lines connect
     history[history.length - 1] = {
       ...history[history.length - 1],
       projection: projection[0].projection,
-      bandLow:    projection[0].bandLow,
-      bandWidth:  projection[0].bandWidth,
     };
 
     const last = projection[projection.length - 1];
     return {
-      chartPoints:    [...history, ...projection.slice(1)],
+      chartPoints: [...history, ...projection.slice(1)],
       finalProjected: last.projection ?? null,
-      finalLow:       includeRange && last.bandLow != null ? last.bandLow : null,
-      finalHigh:      includeRange && last.bandLow != null && last.bandWidth != null
-        ? last.bandLow + last.bandWidth
-        : null,
     };
-  }, [chartData, years, includeHistory, includeRange, annualRate, reg]);
+  }, [chartData, years, annualRate, monthlyContribution]);
 
   const mood   = getRateMood(annualRate);
   const avgPct = (SP500_AVG / RATE_MAX) * 100;
 
   return (
     <AnalyticsCard title="Predictions">
-      <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col gap-4 mb-4">
 
         {/* Prediction horizon */}
         <div className="flex flex-col gap-1">
@@ -206,58 +153,48 @@ export default function PredictionsCard({ chartData }: Props) {
           />
         </div>
 
-        {/* Checkboxes */}
+        {/* Future contributions */}
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={includeHistory}
-                onChange={(e) => setIncludeHistory(e.target.checked)}
-                style={{ accentColor: "var(--color-yellow)", width: 14, height: 14 }}
-              />
-              <span className="text-xs" style={{ color: "var(--color-text)" }}>Include historical growth</span>
-              {reg !== null && (
-                <span
-                  className="text-xs tabular-nums"
-                  style={{ color: reg.cagr >= 0 ? "#10b981" : "#ef4444" }}
-                >
-                  {reg.cagr >= 0 ? "+" : ""}{(reg.cagr * 100).toFixed(1)}% CAGR
-                </span>
-              )}
-            </label>
-            {includeHistory && (
-              <div className="ml-5 flex items-center gap-2">
-                <span className="text-xs" style={{ color: "var(--color-muted)" }}>Lookback</span>
-                <div className="flex gap-1">
-                  {LOOKBACKS.map((lb) => (
-                    <button
-                      key={lb}
-                      onClick={() => setLookback(lb)}
-                      className="text-xs px-2 py-0.5 rounded"
-                      style={{
-                        backgroundColor: lookback === lb ? "var(--color-yellow)" : "transparent",
-                        color: lookback === lb ? "black" : "var(--color-muted)",
-                        fontWeight: lookback === lb ? 600 : 400,
-                        border: lookback === lb ? "none" : "1px solid var(--color-border)",
-                      }}
-                    >
-                      {lb}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={includeRange}
-              onChange={(e) => setIncludeRange(e.target.checked)}
+              checked={includeContributions}
+              onChange={(e) => setIncludeContributions(e.target.checked)}
               style={{ accentColor: "var(--color-yellow)", width: 14, height: 14 }}
             />
-            <span className="text-xs" style={{ color: "var(--color-text)" }}>Show uncertainty range</span>
+            <span className="text-xs" style={{ color: "var(--color-text)" }}>Include future contributions</span>
           </label>
+          {includeContributions && (
+            <div className="ml-5 flex flex-col gap-1.5">
+              {suggestedMonthly !== 0 && (
+                <div className="text-xs" style={{ color: "var(--color-muted)" }}>
+                  Suggested based on trends:{" "}
+                  <button
+                    className="underline"
+                    style={{ color: "var(--color-yellow)" }}
+                    onClick={() => setContributionInput(String(suggestedMonthly))}
+                  >
+                    {formatUSD(suggestedMonthly)}/mo
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: "var(--color-muted)" }}>Monthly contribution</span>
+                <div className="flex items-center rounded px-2 py-1 gap-1" style={{ backgroundColor: "var(--color-bg)", border: "1px solid var(--color-border)" }}>
+                  <span className="text-xs" style={{ color: "var(--color-muted)" }}>$</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={suggestedMonthly !== 0 ? String(suggestedMonthly) : "0"}
+                    value={contributionInput}
+                    onChange={(e) => setContributionInput(e.target.value)}
+                    className="text-xs tabular-nums bg-transparent outline-none w-24"
+                    style={{ color: "var(--color-text)" }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Annual return slider */}
@@ -320,10 +257,6 @@ export default function PredictionsCard({ chartData }: Props) {
                 <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.25} />
                 <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="rangeGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%"   stopColor="#f59e0b" stopOpacity={0.08} />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.18} />
-              </linearGradient>
             </defs>
             <XAxis
               dataKey="timestamp"
@@ -348,7 +281,7 @@ export default function PredictionsCard({ chartData }: Props) {
               formatter={(val: unknown, name: unknown) => {
                 if (name === "actual")     return [formatUSD(val as number), "Net Worth"];
                 if (name === "projection") return [formatUSD(val as number), "Projected"];
-                return null; // hide bandLow / bandWidth
+                return null;
               }}
             />
             <ReferenceLine
@@ -357,9 +290,6 @@ export default function PredictionsCard({ chartData }: Props) {
               strokeDasharray="3 3"
               strokeOpacity={0.5}
             />
-            {/* Uncertainty band: invisible floor + visible width stacked on top */}
-            <Area type="monotone" dataKey="bandLow"   stackId="range" stroke="none" fill="transparent"           dot={false} activeDot={false} legendType="none" connectNulls />
-            <Area type="monotone" dataKey="bandWidth" stackId="range" stroke="none" fill="url(#rangeGradient)"   dot={false} activeDot={false} legendType="none" connectNulls />
             {/* Actual history */}
             <Area
               type="monotone"
@@ -390,29 +320,16 @@ export default function PredictionsCard({ chartData }: Props) {
       {/* Terminal value stat card */}
       {finalProjected !== null && (
         <div className="mt-4 rounded-lg p-4" style={{ backgroundColor: "var(--color-border)" }}>
-          <div className="text-xs mb-3" style={{ color: "var(--color-muted)" }}>
+          <div className="text-xs mb-2" style={{ color: "var(--color-muted)" }}>
             Projected net worth in {years} year{years !== 1 ? "s" : ""}
+            {includeContributions && monthlyContribution !== 0 && (
+              <span> · {formatUSD(monthlyContribution)}/mo contributions</span>
+            )}
+            <span> · {annualRate.toFixed(1)}% compounding annually</span>
           </div>
-          {finalLow !== null && finalHigh !== null ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <div>
-                <div className="text-xs mb-1" style={{ color: "var(--color-muted)" }}>Low</div>
-                <div className="text-base font-semibold tabular-nums" style={{ color: "#ef4444" }}>{formatUSD(finalLow)}</div>
-              </div>
-              <div>
-                <div className="text-xs mb-1" style={{ color: "var(--color-muted)" }}>Projected</div>
-                <div className="text-base font-semibold tabular-nums" style={{ color: "var(--color-yellow)" }}>{formatUSD(finalProjected)}</div>
-              </div>
-              <div>
-                <div className="text-xs mb-1" style={{ color: "var(--color-muted)" }}>High</div>
-                <div className="text-base font-semibold tabular-nums" style={{ color: "#10b981" }}>{formatUSD(finalHigh)}</div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-2xl font-semibold tabular-nums" style={{ color: "var(--color-yellow)" }}>
-              {formatUSD(finalProjected)}
-            </div>
-          )}
+          <div className="text-2xl font-semibold tabular-nums" style={{ color: "var(--color-yellow)" }}>
+            {formatUSD(finalProjected)}
+          </div>
         </div>
       )}
     </AnalyticsCard>
