@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import AnalyticsCard from "./AnalyticsCard";
 import TrendsChart, { SinglePoint, MultiPoint, AccountMeta } from "./TrendsChart";
 import { formatUSD } from "../../lib/utils/money";
@@ -143,31 +143,32 @@ export default function TrendsCard({ chartData, accountData }: Props) {
 
   const startTs = getStartTimestamp(preset);
 
-  const filteredData = startTs
-    ? chartData.filter((d) => dateToTimestamp(d.date) >= startTs)
-    : chartData;
+  const filteredData = useMemo(
+    () => startTs ? chartData.filter((d) => dateToTimestamp(d.date) >= startTs) : chartData,
+    [chartData, startTs]
+  );
 
-  const stats = computeStats(filteredData);
+  const stats = useMemo(() => computeStats(filteredData), [filteredData]);
 
   // Regression + trend/projection for single mode
-  const regression =
-    filteredData.length >= 2
-      ? linearRegression(
-          filteredData.map((d) => ({ x: dateToTimestamp(d.date) / MS_PER_DAY, y: d.value })),
-        )
-      : null;
+  const regression = useMemo(
+    () => filteredData.length >= 2
+      ? linearRegression(filteredData.map((d) => ({ x: dateToTimestamp(d.date) / MS_PER_DAY, y: d.value })))
+      : null,
+    [filteredData]
+  );
 
-  const singleData: SinglePoint[] = filteredData.map((d) => {
+  const singleData: SinglePoint[] = useMemo(() => filteredData.map((d) => {
     const ts = dateToTimestamp(d.date);
     return {
       timestamp: ts,
       value: d.value,
       trend: regression ? regression(ts / MS_PER_DAY) : undefined,
     };
-  });
+  }), [filteredData, regression]);
 
   // Multi-account mode data
-  const multiData = buildMultiData(accountData, startTs);
+  const multiData = useMemo(() => buildMultiData(accountData, startTs), [accountData, startTs]);
   const accountsWithColors: AccountMeta[] = accountData
     .filter((acc) => acc.history.length > 0)
     .map((acc, i) => ({

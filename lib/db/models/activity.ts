@@ -32,6 +32,8 @@ const activitySchema = new Schema<IActivity>({
 });
 
 activitySchema.index({ recordedAt: 1 });
+activitySchema.index({ date: 1 });
+activitySchema.index({ accountId: 1, date: 1 });
 
 const Activity: Model<IActivity> =
   mongoose.models.Activity ||

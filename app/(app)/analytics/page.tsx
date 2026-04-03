@@ -5,6 +5,7 @@ import Account from "../../../lib/db/models/account";
 import Activity from "../../../lib/db/models/activity";
 import TrendsCard from "../../../components/analytics/TrendsCard";
 import PredictionsCard from "../../../components/analytics/PredictionsCard";
+import { buildNetWorthSeries } from "../../../lib/utils/netWorth";
 
 async function getAnalyticsData() {
   await connect();
@@ -13,32 +14,7 @@ async function getAnalyticsData() {
   const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
 
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
-
-  // Per-account history lookup
-  const historyByDate = new Map<string, Map<string, number>>();
-  for (const activity of activities) {
-    const day = activity.date;
-    if (!historyByDate.has(day)) historyByDate.set(day, new Map());
-    historyByDate.get(day)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  // Net worth chart data
-  const allDays = [...historyByDate.keys()].sort();
-  const latestValues = new Map<string, number>();
-  const chartData: { date: string; value: number }[] = [];
-
-  for (const day of allDays) {
-    historyByDate.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
-
-    let netWorth = 0;
-    latestValues.forEach((value, accountId) => {
-      const type = accountTypes.get(accountId);
-      if (type === "liability") netWorth -= value;
-      else if (type != null) netWorth += value;
-    });
-
-    chartData.push({ date: day, value: netWorth });
-  }
+  const chartData = buildNetWorthSeries(activities, accountTypes);
 
   // Per-account history
   const accountHistoryMap = new Map<string, { date: string; value: number }[]>();
