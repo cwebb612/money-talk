@@ -30,10 +30,7 @@ function dateToTimestamp(dateStr: string): number {
   return new Date(year, month - 1, day).getTime();
 }
 
-function toDays(ts: number) {
-  return ts / 86400000;
-}
-
+const MS_PER_DAY = 86400000;
 
 function getStartTimestamp(preset: Preset): number | null {
   const now = new Date();
@@ -65,15 +62,14 @@ function computeStats(data: { date: string; value: number }[]) {
 
   const allTimeHigh = data.reduce((max, d) => (d.value > max.value ? d : max), data[0]);
 
+  // Group by calendar month end-values — shared basis for avg, best, and streak
   const monthMap = new Map<string, number[]>();
   for (const d of data) {
     const month = d.date.slice(0, 7);
     if (!monthMap.has(month)) monthMap.set(month, []);
     monthMap.get(month)!.push(d.value);
   }
-
-  const months = [...monthMap.keys()].sort();
-  const monthEnds = months.map((m) => {
+  const monthEnds = [...monthMap.keys()].sort().map((m) => {
     const vals = monthMap.get(m)!;
     return { month: m, value: vals[vals.length - 1] };
   });
@@ -157,7 +153,7 @@ export default function TrendsCard({ chartData, accountData }: Props) {
   const regression =
     filteredData.length >= 2
       ? linearRegression(
-          filteredData.map((d) => ({ x: toDays(dateToTimestamp(d.date)), y: d.value })),
+          filteredData.map((d) => ({ x: dateToTimestamp(d.date) / MS_PER_DAY, y: d.value })),
         )
       : null;
 
@@ -166,7 +162,7 @@ export default function TrendsCard({ chartData, accountData }: Props) {
     return {
       timestamp: ts,
       value: d.value,
-      trend: regression ? regression(toDays(ts)) : undefined,
+      trend: regression ? regression(ts / MS_PER_DAY) : undefined,
     };
   });
 

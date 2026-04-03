@@ -1,6 +1,6 @@
 ---
-name: init
-description: Init the workspace to get shit done
+name: start-work
+description: Set up the workspace to get shit done
 ---
 
 Git setup for starting a new feature branch.
