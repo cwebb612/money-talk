@@ -5,6 +5,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 import HoldingsEditor, { Holding } from "./HoldingsEditor";
 import { AccountType } from "../../lib/db/models/account";
+import { parseNumeric, formatNumeric } from "../../lib/utils/money";
 
 export interface AccountFormData {
   name: string;
@@ -42,7 +43,7 @@ export default function AccountForm({
   const [type, setType] = useState<AccountType>(initial?.type ?? "cash");
   const [institutionUrl, setInstitutionUrl] = useState(initial?.institutionUrl ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [balance, setBalance] = useState(initial?.balance ?? 0);
+  const [balanceStr, setBalanceStr] = useState(formatNumeric(initial?.balance ?? 0));
   const [holdings, setHoldings] = useState<Holding[]>(initial?.holdings ?? []);
   const [recordedAt, setRecordedAt] = useState(initial?.recordedAt ?? today);
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function AccountForm({
     setError("");
     setLoading(true);
     try {
-      await onSubmit({ name, type, institutionUrl, notes, balance, holdings, recordedAt: showDateField ? recordedAt : undefined });
+      await onSubmit({ name, type, institutionUrl, notes, balance: parseNumeric(balanceStr), holdings, recordedAt: showDateField ? recordedAt : undefined });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -145,9 +146,11 @@ export default function AccountForm({
             {type === "liability" ? "Amount Owed" : "Balance"}
           </label>
           <Input
-            type="number"
-            value={balance || ""}
-            onChange={(e) => setBalance(parseFloat(e.target.value) || 0)}
+            type="text"
+            inputMode="decimal"
+            value={balanceStr}
+            onChange={(e) => setBalanceStr(e.target.value)}
+            onBlur={(e) => setBalanceStr(formatNumeric(parseNumeric(e.target.value)))}
             placeholder="0.00"
             required
           />

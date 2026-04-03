@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import AnalyticsCard from "./AnalyticsCard";
-import { formatUSD } from "../../lib/utils/money";
+import { formatUSD, parseNumeric, formatNumeric } from "../../lib/utils/money";
 
 interface Props {
   chartData: { date: string; value: number }[];
@@ -85,8 +85,8 @@ export default function PredictionsCard({ chartData }: Props) {
   // Resolve the monthly contribution to use: text input overrides suggestion
   const monthlyContribution = useMemo(() => {
     if (!includeContributions) return 0;
-    const parsed = parseFloat(contributionInput.replace(/[^0-9.-]/g, ""));
-    if (!isNaN(parsed) && contributionInput.trim() !== "") return parsed;
+    const parsed = parseNumeric(contributionInput);
+    if (parsed !== 0 || contributionInput.trim() !== "") return parsed;
     return suggestedMonthly;
   }, [includeContributions, contributionInput, suggestedMonthly]);
 
@@ -172,7 +172,7 @@ export default function PredictionsCard({ chartData }: Props) {
                   <button
                     className="underline"
                     style={{ color: "var(--color-yellow)" }}
-                    onClick={() => setContributionInput(String(suggestedMonthly))}
+                    onClick={() => setContributionInput(formatNumeric(suggestedMonthly))}
                   >
                     {formatUSD(suggestedMonthly)}/mo
                   </button>
@@ -184,10 +184,11 @@ export default function PredictionsCard({ chartData }: Props) {
                   <span className="text-xs" style={{ color: "var(--color-muted)" }}>$</span>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    placeholder={suggestedMonthly !== 0 ? String(suggestedMonthly) : "0"}
+                    inputMode="decimal"
+                    placeholder={suggestedMonthly !== 0 ? formatNumeric(suggestedMonthly) : "0"}
                     value={contributionInput}
                     onChange={(e) => setContributionInput(e.target.value)}
+                    onBlur={(e) => { const n = parseNumeric(e.target.value); if (n) setContributionInput(formatNumeric(n)); }}
                     className="text-xs tabular-nums bg-transparent outline-none w-24"
                     style={{ color: "var(--color-text)" }}
                   />
