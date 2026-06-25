@@ -95,7 +95,7 @@ export default function AccountDetail({ account, lastUpdated, chartData, onUpdat
             )}
           </div>
         </div>
-        <div style={{ borderTop: "1px solid var(--color-border)", marginLeft: "-1.5rem", marginRight: "-1.5rem", paddingTop: "1rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
+        <div style={{ borderTop: "1px solid var(--color-border)", marginLeft: "-1rem", marginRight: "-1rem", paddingTop: "1rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
           <NetWorthChart data={chartData} label="Value" />
         </div>
       </Card>
