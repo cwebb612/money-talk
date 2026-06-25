@@ -23,6 +23,27 @@ docker compose -f docker-compose.no-mongo.yml up -d   # app only; point MONGO_UR
 docker compose -f docker-compose.no-mongo.yml down
 ```
 
+## Test data seed script
+
+`scripts/seed-test-data.ts` populates a database with 8 synthetic accounts and 78 months of history (Jan 2020 – Jun 2026). It is useful for development and QA — never for production.
+
+**WARNING: this script permanently deletes all existing accounts and activity records before inserting test data. Verify your `.env` points at a dev or test database before running.**
+
+```bash
+# Dry run — shows the target database and exits without touching anything
+npx tsx scripts/seed-test-data.ts
+
+# Actually run it (requires --confirm to prevent accidents)
+npx tsx scripts/seed-test-data.ts --confirm
+```
+
+The script reads `MONGO_URL` and `MONGO_DB_NAME` from `.env` automatically. Running without `--confirm` always prints the target connection details and exits — it will never modify data by accident.
+
+What gets created:
+- Cash: Chase Checking, Marcus High-Yield Savings
+- Investment: Fidelity Brokerage (AAPL, MSFT, VTI, AMZN), Vanguard Roth IRA (VTI, BND, VXUS), Robinhood (TSLA, NVDA, META)
+- Liability: Chase Mortgage, Chase Freedom Unlimited (credit card), Honda Civic Loan (paid off mid-2024)
+
 ## Environment Variables
 
 ### Default setup — bundled MongoDB (`docker-compose.yml`)

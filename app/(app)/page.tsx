@@ -4,9 +4,7 @@ import { verifyToken } from "../../lib/auth/session";
 import connect from "../../lib/db/mongodb";
 import Account from "../../lib/db/models/account";
 import Activity from "../../lib/db/models/activity";
-import NetWorthCard from "../../components/dashboard/NetWorthCard";
-import AssetPieChart from "../../components/dashboard/AssetPieChart";
-import AccountBreakdown from "../../components/dashboard/AccountBreakdown";
+import DashboardClient from "../../components/dashboard/DashboardClient";
 import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 
 async function getDashboardData() {
@@ -18,10 +16,6 @@ async function getDashboardData() {
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
   const chartData = buildNetWorthSeries(activities, accountTypes);
 
-  const currentNetWorth = accounts.reduce(
-    (sum, a) => sum + (a.type === "liability" ? -a.currentValue : a.currentValue),
-    0
-  );
   const lastUpdated =
     activities.length > 0
       ? activities[activities.length - 1].date
@@ -50,7 +44,6 @@ async function getDashboardData() {
       lastUpdated: accountLastUpdated.get(a._id.toString()) ?? null,
     })),
     chartData,
-    currentNetWorth,
     lastUpdated,
   };
 }
@@ -62,12 +55,10 @@ export default async function DashboardPage() {
 
   if (!payload?.userId) return null;
 
-  const { accounts, chartData, currentNetWorth, lastUpdated } = await getDashboardData();
+  const { accounts, chartData, lastUpdated } = await getDashboardData();
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
-      <NetWorthCard value={currentNetWorth} updatedAt={lastUpdated} chartData={chartData} />
-
       {accounts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
@@ -82,12 +73,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <AssetPieChart accounts={accounts as any} />
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <AccountBreakdown accounts={accounts as any} />
-        </>
+        <DashboardClient accounts={accounts} chartData={chartData} updatedAt={lastUpdated} />
       )}
     </div>
   );
