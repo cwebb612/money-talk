@@ -5,16 +5,12 @@ import connect from "../../lib/db/mongodb";
 import Account from "../../lib/db/models/account";
 import Activity from "../../lib/db/models/activity";
 import DashboardClient from "../../components/dashboard/DashboardClient";
-import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 
 async function getDashboardData() {
   await connect();
 
   const accounts = await Account.find().sort({ type: 1 }).lean();
   const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
-
-  const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
-  const chartData = buildNetWorthSeries(activities, accountTypes);
 
   const lastUpdated =
     activities.length > 0
@@ -43,7 +39,11 @@ async function getDashboardData() {
       updatedAt: a.updatedAt instanceof Date ? a.updatedAt.toISOString() : String(a.updatedAt),
       lastUpdated: accountLastUpdated.get(a._id.toString()) ?? null,
     })),
-    chartData,
+    activities: activities.map((act) => ({
+      accountId: act.accountId.toString(),
+      date: act.date,
+      value: act.value,
+    })),
     lastUpdated,
   };
 }
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
   if (!payload?.userId) return null;
 
-  const { accounts, chartData, lastUpdated } = await getDashboardData();
+  const { accounts, activities, lastUpdated } = await getDashboardData();
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <DashboardClient accounts={accounts} chartData={chartData} updatedAt={lastUpdated} />
+        <DashboardClient accounts={accounts} activities={activities} updatedAt={lastUpdated} />
       )}
     </div>
   );

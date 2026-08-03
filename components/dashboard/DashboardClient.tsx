@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import NetWorthCard from "./NetWorthCard";
 import AssetPieChart from "./AssetPieChart";
 import AccountBreakdown, { AccountDoc } from "./AccountBreakdown";
+import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 
 interface Props {
   accounts: AccountDoc[];
-  chartData: { date: string; value: number }[];
+  activities: { accountId: string; date: string; value: number }[];
   updatedAt: string;
 }
 
-export default function DashboardClient({ accounts, chartData, updatedAt }: Props) {
+export default function DashboardClient({ accounts, activities, updatedAt }: Props) {
   const [checked, setChecked] = useState<Set<string>>(
     () => new Set(accounts.map((a) => a._id))
   );
@@ -31,6 +32,13 @@ export default function DashboardClient({ accounts, chartData, updatedAt }: Prop
     (sum, a) => sum + (a.type === "liability" ? -a.currentValue : a.currentValue),
     0
   );
+
+  const chartData = useMemo(() => {
+    const includedTypes = new Map(
+      includedAccounts.map((a) => [a._id, a.type])
+    );
+    return buildNetWorthSeries(activities, includedTypes);
+  }, [activities, includedAccounts]);
 
   return (
     <>

@@ -94,6 +94,7 @@ export default function NetWorthChart({ data, label = "Net Worth" }: NetWorthCha
           fill="url(#netWorthGradient)"
           dot={false}
           activeDot={{ r: 4, fill: "var(--color-yellow)" }}
+          isAnimationActive={false}
         />
       </AreaChart>
     </ResponsiveContainer>
