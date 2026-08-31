@@ -96,18 +96,21 @@ Four MongoDB collections via Mongoose (`lib/db/models/`):
 
 - **users** — multi-user; username + bcrypt passwordHash + `lastLoginAt`. All users are admins. First user seeded from `APP_USERNAME`/`APP_PASSWORD` env vars; subsequent users created via the Users page.
 - **accounts** — `type` enum: `cash | investment | liability`. Cash/liability have a `balance` field. Investment accounts have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save. Shared across all users — no `userId` scoping.
-- **activity** — append-only time-series log. One entry is written every time an account is created or reconciled. Used to build the net worth graph. Never updated or deleted. Shared across all users — no `userId` scoping.
+- **activity** — time-series log. One entry is written every time an account is created or reconciled (upserted per `{accountId, date}`). Used to build the net worth graph. Entries can also be edited or deleted directly via the activity log UI (`PATCH`/`DELETE /api/activity/entry/[activityId]`); editing or deleting an account's most-recent entry resyncs `Account.balance`/`holdings`/`currentValue` via `lib/utils/activitySync.ts`, and an account's last remaining entry can't be deleted. Shared across all users — no `userId` scoping.
 - **apikeys** — API key records: `name`, `key` (plaintext), `prefix` (first 11 chars for display), `lastUsedAt`. Scoped to `userId`.
 
 ### Net worth graph
 
 The dashboard aggregates the `activity` collection server-side: for each calendar day, take the latest snapshot per account, then sum assets and subtract liabilities. This produces the `{date, value}[]` array fed to `NetWorthChart` (Recharts `LineChart`). The same aggregation is reused by the analytics page (`app/(app)/analytics/page.tsx`), which also builds a per-account history array for the per-account chart mode.
 
+The activity log feature reads raw (non-aggregated) activity documents instead, through separate endpoints: `GET /api/activity` (all accounts, paginated, joined with account name/type) and `GET /api/accounts/[id]/activity-log` (one account, filtered by a `months` calendar window). Neither touches the existing `GET /api/accounts/[id]/activity`, which still returns aggregated `{date, value}[]` for the chart.
+
 ### Route groups
 
 - `app/(auth)/` — unauthenticated pages (login)
 - `app/(app)/` — auth-gated pages with the nav shell layout
 - `app/(app)/analytics/` — analytics page; `AnalyticsCard` (collapsible wrapper), `TrendsCard` (history chart + stats), `PredictionsCard` (projection with horizon/rate/uncertainty controls) live in `components/analytics/`
+- `app/(app)/activity/` — database-wide activity log page (all accounts, paginated, editable). The per-account equivalent is `AccountActivityCard` on the account detail page, not a separate route.
 - `app/api-doc/` — Scalar API reference UI (public; path starts with `api` so proxy skips it); served as a route handler, not a page
 - `app/api/openapi.json/` — serves the OpenAPI spec as JSON; consumed by the Scalar UI
 - `app/api/v1/` — public REST API, gated by `X-API-Key` header
@@ -133,6 +136,7 @@ Use these variables for all new UI rather than hardcoding hex values.
 ### Key utilities
 
 - `lib/utils/money.ts` — `calculateAccountValue(account)` (pure, no DB) and `formatUSD(value)`
+- `lib/utils/activitySync.ts` — `resyncAccountFromActivities(accountId)` recomputes an account's denormalized `balance`/`holdings`/`currentValue` from its latest remaining activity; called after an activity edit or delete
 - `lib/auth/session.ts` — `signToken`, `verifyToken`, `setSessionCookie`, `clearSessionCookie`
 - `lib/auth/password.ts` — `hashPassword`, `comparePassword` (bcryptjs, saltRounds: 10)
 - `lib/auth/apiKey.ts` — `generateApiKey()`, `hashApiKey()`, `validateApiKey(request)` (SHA256-based)

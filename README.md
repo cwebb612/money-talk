@@ -9,6 +9,7 @@ A self-hosted personal finance dashboard for tracking net worth over time. Add y
 - **Net worth dashboard** — line chart of total net worth over time, asset allocation breakdown, and a full account breakdown
 - **Four account types** — Cash, Stock, Crypto, and Liability
 - **Reconciliation workflow** — each account stores a link to its institution so you can open your bank or brokerage, check the current balance, and update it in one flow; every reconciliation is recorded
+- **Activity log** — browse, edit, or delete any past reconciliation entry, per account or across every account at once
 - **Pink/Dark modes** — for the girliepops out there that are trying to get their money up.
 - **REST API** — read-only endpoints for net worth history, accounts, and account activity; secured with API keys
 - **API key management** — create and revoke keys from within the app; interactive API docs at `/api-doc`
@@ -181,9 +182,18 @@ Each account stores an optional institution URL. The intended workflow is:
 3. Check the current balance or prices
 4. Update the value in Money Talk and save
 
-Every save writes a new record to the activity log. This is what builds the net worth history graph over time — no data is ever overwritten.
+Every save writes a new record to the activity log — this is what builds the net worth history graph over time. Past entries can be edited or deleted afterward; see [Activity Log](#activity-log) below.
 
 For investment accounts, there is also a **Refresh Prices** button that fetches current market prices automatically.
+
+### Activity Log
+
+Every reconciliation is recorded as an activity entry, viewable two ways:
+
+- **Per-account** — each account page has an Activity card showing that account's entries, starting with the last 3 months. **Show more** expands the window (3 → 6 → 12 months, then everything).
+- **Database-wide** — the activity log page (clock icon in the top nav, next to Analytics) lists every entry across every account, newest first, with **Load more** pagination.
+
+Click the pencil on any entry to open its edit drawer. From there you can update the recorded value (or holdings, for investment accounts) or delete the entry, which asks for confirmation first. Editing or deleting an account's most recent entry updates that account's current balance/holdings to match. An account's last remaining entry can't be deleted — every account always needs at least one snapshot.
 
 ### Users
 
