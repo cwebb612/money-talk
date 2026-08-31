@@ -6,6 +6,7 @@ import Link from "next/link";
 import AccountDetail from "../../../../components/accounts/AccountDetail";
 import { AccountFormData } from "../../../../components/accounts/AccountForm";
 import HoldingsPieChart from "../../../../components/accounts/HoldingsPieChart";
+import AccountActivityCard from "../../../../components/accounts/AccountActivityCard";
 
 interface AccountData {
   _id: string;
@@ -68,6 +69,14 @@ export default function AccountDetailPage() {
     fetchActivity();
   }
 
+  function handleActivityChanged() {
+    fetch(`/api/accounts/${id}`)
+      .then((r) => r.json())
+      .then((data) => setAccount(data))
+      .catch(() => {});
+    fetchActivity();
+  }
+
   if (loading) {
     return (
       <div className="max-w-lg mx-auto px-4 py-8 text-center" style={{ color: "var(--color-muted)" }}>
@@ -127,6 +136,11 @@ export default function AccountDetailPage() {
         {account.type === "investment" && (
           <HoldingsPieChart holdings={account.holdings} />
         )}
+        <AccountActivityCard
+          accountId={id}
+          accountType={account.type}
+          onChanged={handleActivityChanged}
+        />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Heart, Moon, User, Users, Key, SquareArrowRight, Calculator } from "lucide-react";
+import { Heart, Moon, User, Users, Key, SquareArrowRight, Calculator, History } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -78,6 +78,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             aria-label="Analytics"
           >
             <Calculator size={16} />
+          </Link>
+
+          <Link
+            href="/activity"
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 32,
+              height: 32,
+              border: "1px solid var(--color-border)",
+              backgroundColor: pathname === "/activity" ? "var(--color-border)" : "transparent",
+              color: pathname === "/activity" ? "var(--color-yellow)" : "var(--color-muted)",
+            }}
+            aria-label="Activity Log"
+          >
+            <History size={16} />
           </Link>
 
           <div ref={menuRef} style={{ position: "relative" }}>
