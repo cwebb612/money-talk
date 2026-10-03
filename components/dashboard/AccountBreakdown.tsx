@@ -30,7 +30,7 @@ export default function AccountBreakdown({ accounts, checked, onToggle }: Accoun
     .reduce((sum, a) => sum + a.currentValue, 0);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <Section title="Assets" total={assetTotal} accounts={assets} checked={checked} onToggle={onToggle} />
       {liabilities.length > 0 && (
         <Section title="Liabilities" total={liabilityTotal} accounts={liabilities} checked={checked} onToggle={onToggle} />

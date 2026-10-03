@@ -44,3 +44,41 @@ export function buildNetWorthSeries(
 
   return series;
 }
+
+export interface AssetLiabilityPoint {
+  date: string;
+  assets: number;
+  liabilities: number;
+}
+
+// Same carry-forward walk as buildNetWorthSeries, keeping assets and liabilities apart.
+export function buildAssetLiabilitySeries(
+  activities: Array<{ date: string; accountId: { toString(): string }; value: number }>,
+  accountTypes: Map<string, string>
+): AssetLiabilityPoint[] {
+  const dayMap = new Map<string, Map<string, number>>();
+
+  for (const activity of activities) {
+    if (!dayMap.has(activity.date)) dayMap.set(activity.date, new Map());
+    dayMap.get(activity.date)!.set(activity.accountId.toString(), activity.value);
+  }
+
+  const latestValues = new Map<string, number>();
+  const series: AssetLiabilityPoint[] = [];
+
+  for (const day of [...dayMap.keys()].sort()) {
+    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
+
+    let assets = 0;
+    let liabilities = 0;
+    latestValues.forEach((value, accountId) => {
+      const type = accountTypes.get(accountId);
+      if (type === "liability") liabilities += value;
+      else if (type != null) assets += value;
+    });
+
+    series.push({ date: day, assets, liabilities });
+  }
+
+  return series;
+}
