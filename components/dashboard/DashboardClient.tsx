@@ -5,6 +5,7 @@ import NetWorthCard from "./NetWorthCard";
 import AssetPieChart from "./AssetPieChart";
 import AccountBreakdown, { AccountDoc } from "./AccountBreakdown";
 import { buildNetWorthSeries } from "../../lib/utils/netWorth";
+import { DashboardGrid, GridModule } from "../ui/DashboardGrid";
 
 interface Props {
   accounts: AccountDoc[];
@@ -40,12 +41,22 @@ export default function DashboardClient({ accounts, activities, updatedAt }: Pro
     return buildNetWorthSeries(activities, includedTypes);
   }, [activities, includedAccounts]);
 
+  const hasPieData = includedAccounts.some((a) => a.type !== "liability" && a.currentValue > 0);
+
   return (
-    <>
-      <NetWorthCard value={netWorth} updatedAt={updatedAt} chartData={chartData} />
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <AssetPieChart accounts={includedAccounts as any} />
-      <AccountBreakdown accounts={accounts} checked={checked} onToggle={toggle} />
-    </>
+    <DashboardGrid>
+      <GridModule span={hasPieData ? "main" : "full"} stretch>
+        <NetWorthCard value={netWorth} updatedAt={updatedAt} chartData={chartData} />
+      </GridModule>
+      {hasPieData && (
+        <GridModule span="side" stretch>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <AssetPieChart accounts={includedAccounts as any} />
+        </GridModule>
+      )}
+      <GridModule span="full">
+        <AccountBreakdown accounts={accounts} checked={checked} onToggle={toggle} />
+      </GridModule>
+    </DashboardGrid>
   );
 }

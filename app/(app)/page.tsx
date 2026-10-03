@@ -5,6 +5,7 @@ import connect from "../../lib/db/mongodb";
 import Account from "../../lib/db/models/account";
 import Activity from "../../lib/db/models/activity";
 import DashboardClient from "../../components/dashboard/DashboardClient";
+import { PageContainer } from "../../components/ui/DashboardGrid";
 
 async function getDashboardData() {
   await connect();
@@ -58,7 +59,7 @@ export default async function DashboardPage() {
   const { accounts, activities, lastUpdated } = await getDashboardData();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8">
+    <PageContainer>
       {accounts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
@@ -75,6 +76,6 @@ export default async function DashboardPage() {
       ) : (
         <DashboardClient accounts={accounts} activities={activities} updatedAt={lastUpdated} />
       )}
-    </div>
+    </PageContainer>
   );
 }

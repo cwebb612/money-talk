@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatUSD } from "../../lib/utils/money";
+import { TOOLTIP_STYLE, formatMonthTick, formatTooltipDate } from "./chartFormat";
 
 export interface SinglePoint {
   timestamp: number;
@@ -33,21 +34,11 @@ interface Props {
   singleData: SinglePoint[];
   multiData: MultiPoint[];
   accounts: AccountMeta[];
+  domain?: [number, number];
+  ticks?: number[];
 }
 
-function formatTick(ts: number) {
-  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function formatTooltipDate(ts: unknown) {
-  return new Date(ts as number).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-export default function TrendsChart({ mode, singleData, multiData, accounts }: Props) {
+export default function TrendsChart({ mode, singleData, multiData, accounts, domain, ticks }: Props) {
   const isEmpty = mode === "all" ? singleData.length === 0 : multiData.length === 0;
 
   if (isEmpty) {
@@ -63,15 +54,16 @@ export default function TrendsChart({ mode, singleData, multiData, accounts }: P
 
   const data = mode === "all" ? singleData : multiData;
   const allTs = data.map((d) => d.timestamp);
-  const domain: [number, number] = [Math.min(...allTs), Math.max(...allTs)];
+  const xDomain: [number, number] = domain ?? [Math.min(...allTs), Math.max(...allTs)];
 
   const xAxis = (
     <XAxis
       dataKey="timestamp"
       type="number"
       scale="time"
-      domain={domain}
-      tickFormatter={formatTick}
+      domain={xDomain}
+      ticks={ticks}
+      tickFormatter={formatMonthTick}
       tick={{ fill: "var(--color-muted)", fontSize: 11 }}
       axisLine={false}
       tickLine={false}
@@ -92,12 +84,7 @@ export default function TrendsChart({ mode, singleData, multiData, accounts }: P
           {xAxis}
           <YAxis hide />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "var(--color-card)",
-              border: "none",
-              borderRadius: 8,
-              color: "var(--color-text)",
-            }}
+            contentStyle={TOOLTIP_STYLE}
             labelFormatter={formatTooltipDate}
             formatter={(val: unknown, name: unknown) => {
               const formatted = formatUSD(val as number);
@@ -143,12 +130,7 @@ export default function TrendsChart({ mode, singleData, multiData, accounts }: P
           width={72}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "var(--color-card)",
-            border: "none",
-            borderRadius: 8,
-            color: "var(--color-text)",
-          }}
+          contentStyle={TOOLTIP_STYLE}
           labelFormatter={formatTooltipDate}
           formatter={(val: unknown, name: unknown) => {
             const acc = accounts.find((a) => a.id === name);

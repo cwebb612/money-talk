@@ -7,6 +7,8 @@ import AccountDetail from "../../../../components/accounts/AccountDetail";
 import { AccountFormData } from "../../../../components/accounts/AccountForm";
 import HoldingsPieChart from "../../../../components/accounts/HoldingsPieChart";
 import AccountActivityCard from "../../../../components/accounts/AccountActivityCard";
+import AccountReconcileCard from "../../../../components/accounts/AccountReconcileCard";
+import { PageContainer, DashboardGrid, GridModule } from "../../../../components/ui/DashboardGrid";
 
 interface AccountData {
   _id: string;
@@ -118,30 +120,37 @@ export default function AccountDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <PageContainer>
       <div className="mb-6">
         <Link href="/" className="text-sm" style={{ color: "var(--color-muted)" }}>
           ← Dashboard
         </Link>
       </div>
-      <div className="flex flex-col gap-6">
-        <AccountDetail
-          account={account}
-          lastUpdated={chartData.length > 0 ? chartData[chartData.length - 1].date : null}
-          chartData={chartData}
-          onUpdate={handleUpdate}
-          onRefreshPrices={handleRefreshPrices}
-          onDelete={handleDelete}
-        />
-        {account.type === "investment" && (
-          <HoldingsPieChart holdings={account.holdings} />
-        )}
-        <AccountActivityCard
-          accountId={id}
-          accountType={account.type}
-          onChanged={handleActivityChanged}
-        />
-      </div>
-    </div>
+      <DashboardGrid>
+        <GridModule span="main">
+          <AccountDetail
+            account={account}
+            lastUpdated={chartData.length > 0 ? chartData[chartData.length - 1].date : null}
+            chartData={chartData}
+          />
+          <AccountReconcileCard
+            account={account}
+            onUpdate={handleUpdate}
+            onRefreshPrices={handleRefreshPrices}
+            onDelete={handleDelete}
+          />
+        </GridModule>
+        <GridModule span="side">
+          {account.type === "investment" && (
+            <HoldingsPieChart holdings={account.holdings} />
+          )}
+          <AccountActivityCard
+            accountId={id}
+            accountType={account.type}
+            onChanged={handleActivityChanged}
+          />
+        </GridModule>
+      </DashboardGrid>
+    </PageContainer>
   );
 }

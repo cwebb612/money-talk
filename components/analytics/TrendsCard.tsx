@@ -3,10 +3,18 @@
 import { useState, useMemo } from "react";
 import AnalyticsCard from "./AnalyticsCard";
 import TrendsChart, { SinglePoint, MultiPoint, AccountMeta } from "./TrendsChart";
+import PresetPicker from "./PresetPicker";
+import StatGrid from "./StatGrid";
+import { changeColor, formatSignedUSD } from "./chartFormat";
 import { formatUSD } from "../../lib/utils/money";
-
-type Preset = "1M" | "6M" | "YTD" | "1Y" | "All";
-const PRESETS: Preset[] = ["1M", "6M", "YTD", "1Y", "All"];
+import {
+  WindowPreset,
+  dateToTimestamp,
+  getChartWindow,
+  sliceWindow,
+  timestampToDate,
+  today,
+} from "../../lib/utils/monthWindow";
 
 const ACCOUNT_COLORS = [
   "#3b82f6", "#10b981", "#8b5cf6", "#ef4444",
@@ -25,23 +33,7 @@ interface Props {
   accountData: AccountData[];
 }
 
-function dateToTimestamp(dateStr: string): number {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day).getTime();
-}
-
 const MS_PER_DAY = 86400000;
-
-function getStartTimestamp(preset: Preset): number | null {
-  const now = new Date();
-  switch (preset) {
-    case "1M":  return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).getTime();
-    case "6M":  return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).getTime();
-    case "YTD": return new Date(now.getFullYear(), 0, 1).getTime();
-    case "1Y":  return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime();
-    case "All": return null;
-  }
-}
 
 function linearRegression(points: { x: number; y: number }[]): ((x: number) => number) | null {
   const n = points.length;
@@ -57,40 +49,16 @@ function linearRegression(points: { x: number; y: number }[]): ((x: number) => n
   return (x: number) => slope * x + intercept;
 }
 
-function computeStats(data: { date: string; value: number }[]) {
+function windowChange(data: { value: number }[]) {
+  if (data.length < 2) return null;
+  const start = data[0].value;
+  const change = data[data.length - 1].value - start;
+  return { change, percent: start !== 0 ? (change / Math.abs(start)) * 100 : null };
+}
+
+function allTimeHigh(data: { date: string; value: number }[]) {
   if (data.length === 0) return null;
-
-  const allTimeHigh = data.reduce((max, d) => (d.value > max.value ? d : max), data[0]);
-
-  // Group by calendar month end-values — shared basis for avg, best, and streak
-  const monthMap = new Map<string, number[]>();
-  for (const d of data) {
-    const month = d.date.slice(0, 7);
-    if (!monthMap.has(month)) monthMap.set(month, []);
-    monthMap.get(month)!.push(d.value);
-  }
-  const monthEnds = [...monthMap.keys()].sort().map((m) => {
-    const vals = monthMap.get(m)!;
-    return { month: m, value: vals[vals.length - 1] };
-  });
-
-  if (monthEnds.length < 2) return { allTimeHigh, avgMonthlyChange: null, bestMonth: null, streak: 0 };
-
-  const changes = monthEnds.slice(1).map((curr, i) => ({
-    month: curr.month,
-    change: curr.value - monthEnds[i].value,
-  }));
-
-  const avgMonthlyChange = changes.reduce((s, c) => s + c.change, 0) / changes.length;
-  const bestMonth = changes.reduce((best, c) => (c.change > best.change ? c : best), changes[0]);
-
-  let streak = 0;
-  for (let i = changes.length - 1; i >= 0; i--) {
-    if (changes[i].change > 0) streak++;
-    else break;
-  }
-
-  return { allTimeHigh, avgMonthlyChange, bestMonth, streak };
+  return data.reduce((max, d) => (d.value > max.value ? d : max), data[0]);
 }
 
 function buildMultiData(
@@ -116,6 +84,14 @@ function buildMultiData(
   }
 
   const result: MultiPoint[] = [];
+
+  const hasUpdateOnStart = startTs !== null && byDate.has(timestampToDate(startTs));
+  if (startTs && latestValues.size > 0 && !hasUpdateOnStart) {
+    const carriedPoint: MultiPoint = { timestamp: startTs };
+    latestValues.forEach((val, id) => (carriedPoint[id] = val));
+    result.push(carriedPoint);
+  }
+
   for (const date of sortedDates) {
     const ts = dateToTimestamp(date);
     if (startTs && ts < startTs) continue;
@@ -132,23 +108,16 @@ function buildMultiData(
   return result;
 }
 
-function formatMonthLabel(month: string) {
-  const [year, m] = month.split("-").map(Number);
-  return new Date(year, m - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
-
 export default function TrendsCard({ chartData, accountData }: Props) {
-  const [preset, setPreset] = useState<Preset>("All");
+  const [preset, setPreset] = useState<WindowPreset>("All");
   const [mode, setMode] = useState<"all" | "per-account">("all");
 
-  const startTs = getStartTimestamp(preset);
+  const { startTs, domain, ticks } = getChartWindow(preset, chartData, today());
 
-  const filteredData = useMemo(
-    () => startTs ? chartData.filter((d) => dateToTimestamp(d.date) >= startTs) : chartData,
-    [chartData, startTs]
-  );
+  const filteredData = useMemo(() => sliceWindow(chartData, startTs), [chartData, startTs]);
 
-  const stats = useMemo(() => computeStats(filteredData), [filteredData]);
+  const periodChange = windowChange(filteredData);
+  const high = useMemo(() => allTimeHigh(chartData), [chartData]);
 
   // Regression + trend/projection for single mode
   const regression = useMemo(
@@ -181,22 +150,7 @@ export default function TrendsCard({ chartData, accountData }: Props) {
     <AnalyticsCard title="Trends">
       {/* Controls */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-1">
-          {PRESETS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPreset(p)}
-              className="text-xs px-2 py-1 rounded"
-              style={{
-                backgroundColor: preset === p ? "var(--color-yellow)" : "transparent",
-                color: preset === p ? "black" : "var(--color-muted)",
-                fontWeight: preset === p ? 600 : 400,
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        <PresetPicker value={preset} onChange={setPreset} />
         <div className="flex gap-1">
           {(["all", "per-account"] as const).map((m) => (
             <button
@@ -221,55 +175,29 @@ export default function TrendsCard({ chartData, accountData }: Props) {
         singleData={singleData}
         multiData={multiData}
         accounts={accountsWithColors}
+        domain={domain}
+        ticks={ticks}
       />
 
-      {/* Stat cards */}
-      {stats && (
-        <div
-          className="mt-4"
-          style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}
-        >
-          {[
+      {high && (
+        <StatGrid
+          stats={[
             {
-              label: "Avg Monthly",
-              value: stats.avgMonthlyChange !== null
-                ? `${stats.avgMonthlyChange >= 0 ? "+" : ""}${formatUSD(stats.avgMonthlyChange)}`
-                : "—",
-              sub: null,
-              color: stats.avgMonthlyChange === null
-                ? "var(--color-muted)"
-                : stats.avgMonthlyChange >= 0 ? "#10b981" : "#ef4444",
-            },
-            {
-              label: "Best Month",
-              value: stats.bestMonth ? `+${formatUSD(stats.bestMonth.change)}` : "—",
-              sub: stats.bestMonth ? formatMonthLabel(stats.bestMonth.month) : null,
-              color: "#10b981",
+              label: "Change",
+              value: periodChange ? formatSignedUSD(periodChange.change) : "—",
+              sub: periodChange?.percent != null
+                ? `${periodChange.percent >= 0 ? "+" : ""}${periodChange.percent.toFixed(1)}%`
+                : null,
+              color: changeColor(periodChange?.change ?? null),
             },
             {
               label: "All-Time High",
-              value: formatUSD(stats.allTimeHigh.value),
-              sub: new Date(dateToTimestamp(stats.allTimeHigh.date)).toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+              value: formatUSD(high.value),
+              sub: new Date(dateToTimestamp(high.date)).toLocaleDateString("en-US", { month: "short", year: "numeric" }),
               color: "var(--color-text)",
             },
-            {
-              label: "Growth Streak",
-              value: stats.streak > 0 ? `${stats.streak} mo` : "—",
-              sub: stats.streak > 0 ? "consecutive" : null,
-              color: stats.streak > 0 ? "#10b981" : "var(--color-muted)",
-            },
-          ].map(({ label, value, sub, color }) => (
-            <div
-              key={label}
-              className="rounded-lg p-4"
-              style={{ backgroundColor: "var(--color-border)" }}
-            >
-              <div className="text-xs mb-2" style={{ color: "var(--color-muted)" }}>{label}</div>
-              <div className="text-xl font-semibold tabular-nums" style={{ color }}>{value}</div>
-              {sub && <div className="text-xs mt-1" style={{ color: "var(--color-muted)" }}>{sub}</div>}
-            </div>
-          ))}
-        </div>
+          ]}
+        />
       )}
     </AnalyticsCard>
   );

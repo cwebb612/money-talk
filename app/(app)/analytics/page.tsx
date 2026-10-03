@@ -5,7 +5,10 @@ import Account from "../../../lib/db/models/account";
 import Activity from "../../../lib/db/models/activity";
 import TrendsCard from "../../../components/analytics/TrendsCard";
 import PredictionsCard from "../../../components/analytics/PredictionsCard";
-import { buildNetWorthSeries } from "../../../lib/utils/netWorth";
+import MonthlyChangeCard from "../../../components/analytics/MonthlyChangeCard";
+import AssetsLiabilitiesCard from "../../../components/analytics/AssetsLiabilitiesCard";
+import { buildNetWorthSeries, buildAssetLiabilitySeries } from "../../../lib/utils/netWorth";
+import { PageContainer, DashboardGrid, GridModule } from "../../../components/ui/DashboardGrid";
 
 async function getAnalyticsData() {
   await connect();
@@ -15,6 +18,7 @@ async function getAnalyticsData() {
 
   const accountTypes = new Map(accounts.map((a) => [a._id.toString(), a.type]));
   const chartData = buildNetWorthSeries(activities, accountTypes);
+  const assetLiabilitySeries = buildAssetLiabilitySeries(activities, accountTypes);
 
   // Per-account history
   const accountHistoryMap = new Map<string, { date: string; value: number }[]>();
@@ -31,22 +35,34 @@ async function getAnalyticsData() {
     history: accountHistoryMap.get(a._id.toString()) ?? [],
   }));
 
-  return { chartData, accountData };
+  return { chartData, accountData, assetLiabilitySeries };
 }
 
 export default async function AnalyticsPage() {
-  const { chartData, accountData } = await getAnalyticsData();
+  const { chartData, accountData, assetLiabilitySeries } = await getAnalyticsData();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <PageContainer className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <h1 className="text-4xl font-bold" style={{ color: "var(--color-text)" }}>Analytics</h1>
         <span className="text-sm font-semibold px-2 py-1 rounded" style={{ backgroundColor: "rgba(245,158,11,0.15)", color: "var(--color-yellow)" }}>
           beta
         </span>
       </div>
-      <TrendsCard chartData={chartData} accountData={accountData} />
-      <PredictionsCard chartData={chartData} />
-    </div>
+      <DashboardGrid>
+        <GridModule span="half" stretch>
+          <TrendsCard chartData={chartData} accountData={accountData} />
+        </GridModule>
+        <GridModule span="half" stretch>
+          <MonthlyChangeCard chartData={chartData} />
+        </GridModule>
+        <GridModule span="half" stretch>
+          <AssetsLiabilitiesCard series={assetLiabilitySeries} />
+        </GridModule>
+        <GridModule span="half" stretch>
+          <PredictionsCard chartData={chartData} />
+        </GridModule>
+      </DashboardGrid>
+    </PageContainer>
   );
 }
