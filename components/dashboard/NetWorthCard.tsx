@@ -4,7 +4,7 @@ import { useState } from "react";
 import NetWorthHeader from "./NetWorthHeader";
 import NetWorthChart from "./NetWorthChart";
 import { formatUSD } from "../../lib/utils/money";
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { CollapsibleHeader, useCollapsible } from "../ui/Collapsible";
 
 type Preset = "1M" | "6M" | "YTD" | "1Y" | "5Y" | "All";
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function NetWorthCard({ value, updatedAt, chartData }: Props) {
-  const [open, setOpen] = useState(true);
+  const { expanded, collapsible, toggle } = useCollapsible();
   const [preset, setPreset] = useState<Preset>("All");
 
   const startTs = getStartTimestamp(preset);
@@ -56,18 +56,18 @@ export default function NetWorthCard({ value, updatedAt, chartData }: Props) {
 
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: "var(--color-card)" }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-start justify-between text-left"
-        aria-label={open ? "Collapse chart" : "Expand chart"}
+      <CollapsibleHeader
+        expanded={expanded}
+        collapsible={collapsible}
+        onToggle={toggle}
+        label="chart"
+        className="items-start"
+        chevronClassName="text-xs mt-1 px-2 py-1"
       >
         <NetWorthHeader value={value} updatedAt={updatedAt} />
-        <span className="text-xs mt-1 px-2 py-1" style={{ color: "var(--color-muted)" }}>
-          {open ? <ChevronUp /> : <ChevronDown />}
-        </span>
-      </button>
+      </CollapsibleHeader>
 
-      {open && (
+      {expanded && (
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex gap-1">
