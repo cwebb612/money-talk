@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { PieChart, Pie, PieSectorShapeProps, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { formatUSD } from "../../lib/utils/money";
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { CollapsibleHeader, useCollapsible } from "../ui/Collapsible";
 
 const colors = [
   "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6",
@@ -23,7 +22,7 @@ interface Props {
 const CustomColors = (props: PieSectorShapeProps) => <Sector {...props} fill={colors[props.index % colors.length]} />;
 
 export default function HoldingsPieChart({ holdings }: Props) {
-  const [open, setOpen] = useState(true);
+  const { expanded, collapsible, toggle } = useCollapsible();
 
   const data = holdings
     .filter((h) => h.quantity > 0 && h.pricePerUnit > 0)
@@ -35,20 +34,19 @@ export default function HoldingsPieChart({ holdings }: Props) {
 
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: "var(--color-card)" }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between mb-4 text-left"
-        aria-label={open ? "Collapse" : "Expand"}
+      <CollapsibleHeader
+        expanded={expanded}
+        collapsible={collapsible}
+        onToggle={toggle}
+        label="Holdings Breakdown"
+        className="items-center mb-4"
       >
         <h2 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
           Holdings Breakdown
         </h2>
-        <span className="text-xs px-2 py-1" style={{ color: "var(--color-muted)" }}>
-          {open ? <ChevronUp /> : <ChevronDown />}
-        </span>
-      </button>
+      </CollapsibleHeader>
 
-      {open && (
+      {expanded && (
         <>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
