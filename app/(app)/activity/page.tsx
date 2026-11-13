@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ActivityFiltersBar, {
   ActivityFilters,
   DEFAULT_ACTIVITY_FILTERS,
 } from "../../../components/activity/ActivityFiltersBar";
+import ListCard, { ListCardEmpty, ListCardRows } from "../../../components/ui/ListCard";
+import { useAccountOptions } from "../../../components/accounts/useAccountOptions";
 import ActivityListItem from "../../../components/activity/ActivityListItem";
 import ActivityEditDrawer, { EditableActivity } from "../../../components/activity/ActivityEditDrawer";
 import { AccountType } from "../../../lib/db/models/account";
@@ -43,17 +45,23 @@ export default function ActivityLogPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<EditableActivity | null>(null);
   const [filters, setFilters] = useState(DEFAULT_ACTIVITY_FILTERS);
-  const [accounts, setAccounts] = useState<{ _id: string; name: string }[]>([]);
+  const accounts = useAccountOptions();
+  const latestRequest = useRef(0);
 
   const fetchPage = useCallback(
     (limit: number) => {
+      const request = ++latestRequest.current;
+      const isLatest = () => request === latestRequest.current;
       fetch(`/api/activity?${activityQuery(filters, limit)}`)
         .then((r) => r.json())
         .then((data: { items: ActivityEntry[]; hasMore: boolean }) => {
+          if (!isLatest()) return;
           setItems(data.items);
           setHasMore(data.hasMore);
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (isLatest()) setLoading(false);
+        });
     },
     [filters]
   );
@@ -62,16 +70,16 @@ export default function ActivityLogPage() {
     fetchPage(PAGE_SIZE);
   }, [fetchPage]);
 
-  useEffect(() => {
-    fetch("/api/accounts")
-      .then((r) => r.json())
-      .then((data: { _id: string; name: string }[]) =>
-        setAccounts(data.map(({ _id, name }) => ({ _id, name })).sort((a, b) => a.name.localeCompare(b.name)))
-      )
-      .catch(() => {});
-  }, []);
-
   const filtersActive = hasActiveFilters(filters);
+
+  function listSummary(): string {
+    if (loading) return "Loading…";
+    return `${items.length}${hasMore ? "+" : ""} ${items.length === 1 ? "entry" : "entries"}`;
+  }
+
+  function clearFilters() {
+    setFilters({ ...DEFAULT_ACTIVITY_FILTERS, sort: filters.sort });
+  }
 
   function loadMore() {
     fetchPage(items.length + PAGE_SIZE);
@@ -109,31 +117,11 @@ export default function ActivityLogPage() {
       <div className="flex flex-col gap-6">
         <ActivityFiltersBar filters={filters} accounts={accounts} onChange={setFilters} />
 
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "var(--color-card)" }}>
-          <div
-            className="flex items-center justify-between gap-4 px-4 py-3"
-            style={{ borderBottom: "1px solid var(--color-border)" }}
-          >
-            <p className="text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
-              {loading ? "Loading…" : `${items.length}${hasMore ? "+" : ""} ${items.length === 1 ? "entry" : "entries"}`}
-            </p>
-            {filtersActive && (
-              <button
-                onClick={() => setFilters({ ...DEFAULT_ACTIVITY_FILTERS, sort: filters.sort })}
-                className="text-xs font-medium"
-                style={{ color: "var(--color-yellow)" }}
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-
+        <ListCard summary={listSummary()} onClearFilters={filtersActive ? clearFilters : undefined}>
           {!loading && items.length === 0 ? (
-            <p className="text-sm px-4 py-6 text-center" style={{ color: "var(--color-muted)" }}>
-              {filtersActive ? "No activity matches these filters." : "No activity yet."}
-            </p>
+            <ListCardEmpty>{filtersActive ? "No activity matches these filters." : "No activity yet."}</ListCardEmpty>
           ) : (
-            <div className="px-4 -mb-px">
+            <ListCardRows>
               {items.map((entry) => (
                 <ActivityListItem
                   key={entry._id}
@@ -144,7 +132,7 @@ export default function ActivityLogPage() {
                   onEdit={() => handleEdit(entry)}
                 />
               ))}
-            </div>
+            </ListCardRows>
           )}
 
           {hasMore && (
@@ -154,7 +142,7 @@ export default function ActivityLogPage() {
               </button>
             </div>
           )}
-        </div>
+        </ListCard>
       </div>
 
       <ActivityEditDrawer

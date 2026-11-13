@@ -3,6 +3,7 @@
 import { useId } from "react";
 import Select from "../ui/Select";
 import FilterField from "../ui/FilterField";
+import { AccountOption } from "../accounts/useAccountOptions";
 import { DATE_RANGE_OPTIONS, DateRange, SORT_OPTIONS, SortOrder } from "../../lib/utils/filters";
 
 export interface ActivityFilters {
@@ -19,7 +20,7 @@ export const DEFAULT_ACTIVITY_FILTERS: ActivityFilters = {
 
 interface ActivityFiltersBarProps {
   filters: ActivityFilters;
-  accounts: { _id: string; name: string }[];
+  accounts: AccountOption[];
   onChange: (filters: ActivityFilters) => void;
 }
 

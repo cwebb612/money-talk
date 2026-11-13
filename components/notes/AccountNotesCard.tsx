@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Card from "../ui/Card";
 import NoteForm from "./NoteForm";
 import NoteItem from "./NoteItem";
-import { createNote, todayString } from "./noteApi";
+import { createNote } from "./noteApi";
+import { todayString } from "../../lib/utils/filters";
 import { NoteDTO } from "../../lib/utils/notes";
 
 interface AccountNotesCardProps {

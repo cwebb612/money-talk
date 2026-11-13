@@ -8,8 +8,8 @@ import {
   hasActiveNoteFilters,
   sortNotes,
   validateNoteBody,
-  isValidNoteDate,
 } from "../../lib/utils/notes";
+import { isDateString } from "../../lib/utils/filters";
 
 function note(id: string, date: string | null, createdAt = "2026-01-01T00:00:00.000Z"): NoteDTO {
   return {
@@ -74,8 +74,8 @@ describe("note validation", () => {
   });
 
   it("accepts only YYYY-MM-DD dates", () => {
-    expect(isValidNoteDate("2026-11-13")).toBe(true);
-    expect(isValidNoteDate("11/13/2026")).toBe(false);
+    expect(isDateString("2026-11-13")).toBe(true);
+    expect(isDateString("11/13/2026")).toBe(false);
   });
 });
 

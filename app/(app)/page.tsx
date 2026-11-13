@@ -11,9 +11,11 @@ import { PageContainer } from "../../components/ui/DashboardGrid";
 async function getDashboardData() {
   await connect();
 
-  const accounts = await Account.find().sort({ type: 1 }).lean();
-  const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
-  const notes = await findNotes({ datedOnly: true });
+  const [accounts, activities, notes] = await Promise.all([
+    Account.find().sort({ type: 1 }).lean(),
+    Activity.find().sort({ recordedAt: 1 }).lean(),
+    findNotes({ datedOnly: true }),
+  ]);
 
   const lastUpdated =
     activities.length > 0

@@ -1,4 +1,4 @@
-import { DateRange, SortOrder, isDateString, rangeStartDate } from "./filters";
+import { DateRange, SortOrder, rangeStartDate } from "./filters";
 
 export const NOTE_MAX_LENGTH = 2000;
 
@@ -12,8 +12,6 @@ export interface NoteDTO {
   createdAt: string;
   updatedAt: string;
 }
-
-export const isValidNoteDate = isDateString;
 
 export function validateNoteBody(value: unknown): string | null {
   if (typeof value !== "string" || value.trim().length === 0) return "body is required";
@@ -73,17 +71,31 @@ export const DEFAULT_NOTE_FILTERS: NoteFilters = {
   sort: "oldest",
 };
 
+function matchesQuery(note: NoteDTO, query: string): boolean {
+  return `${note.body} ${note.accountName ?? ""}`.toLowerCase().includes(query);
+}
+
+function matchesAccount(note: NoteDTO, accountId: string): boolean {
+  if (!accountId) return true;
+  if (accountId === NO_ACCOUNT) return !note.accountId;
+  return note.accountId === accountId;
+}
+
+function matchesDate(note: NoteDTO, start: string | null, includeUndated: boolean): boolean {
+  if (!note.date) return includeUndated;
+  return !start || note.date >= start;
+}
+
 export function filterNotes(notes: NoteDTO[], filters: NoteFilters, today: string): NoteDTO[] {
   const query = filters.query.trim().toLowerCase();
   const start = rangeStartDate(filters.range, today);
 
-  const matches = sortNotes(notes).filter((note) => {
-    if (query && !`${note.body} ${note.accountName ?? ""}`.toLowerCase().includes(query)) return false;
-    if (filters.accountId === NO_ACCOUNT && note.accountId) return false;
-    if (filters.accountId && filters.accountId !== NO_ACCOUNT && note.accountId !== filters.accountId) return false;
-    if (!note.date) return filters.includeUndated;
-    return !start || note.date >= start;
-  });
+  const matches = sortNotes(notes).filter(
+    (note) =>
+      matchesQuery(note, query) &&
+      matchesAccount(note, filters.accountId) &&
+      matchesDate(note, start, filters.includeUndated)
+  );
 
   return filters.sort === "oldest" ? matches.reverse() : matches;
 }

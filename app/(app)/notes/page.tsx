@@ -3,18 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Card from "../../../components/ui/Card";
-import NoteForm, { NoteAccountOption } from "../../../components/notes/NoteForm";
+import ListCard, { ListCardEmpty, ListCardRows } from "../../../components/ui/ListCard";
+import NoteForm from "../../../components/notes/NoteForm";
 import NoteItem from "../../../components/notes/NoteItem";
 import NoteFiltersBar from "../../../components/notes/NoteFiltersBar";
-import { createNote, todayString } from "../../../components/notes/noteApi";
+import { createNote } from "../../../components/notes/noteApi";
+import { useAccountOptions } from "../../../components/accounts/useAccountOptions";
 import { DEFAULT_NOTE_FILTERS, NoteDTO, filterNotes, hasActiveNoteFilters } from "../../../lib/utils/notes";
+import { todayString } from "../../../lib/utils/filters";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [composerKey, setComposerKey] = useState(0);
   const [filters, setFilters] = useState(DEFAULT_NOTE_FILTERS);
-  const [accounts, setAccounts] = useState<NoteAccountOption[]>([]);
+  const accounts = useAccountOptions();
   const composerRef = useRef<HTMLDivElement>(null);
 
   const fetchNotes = useCallback(() => {
@@ -26,24 +29,24 @@ export default function NotesPage() {
 
   useEffect(() => {
     fetchNotes();
-    fetch("/api/accounts")
-      .then((r) => r.json())
-      .then((data: NoteAccountOption[]) =>
-        setAccounts(data.map(({ _id, name }) => ({ _id, name })).sort((a, b) => a.name.localeCompare(b.name)))
-      )
-      .catch(() => {});
   }, [fetchNotes]);
-
-  function goToComposer() {
-    composerRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    composerRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
-  }
 
   const feed = filterNotes(notes, filters, todayString());
   const filtersActive = hasActiveNoteFilters(filters);
 
+  function feedSummary(): string {
+    if (loading) return "Loading…";
+    const total = `${notes.length} ${notes.length === 1 ? "note" : "notes"}`;
+    return filtersActive ? `Showing ${feed.length} of ${total}` : total;
+  }
+
   function clearFilters() {
     setFilters({ ...DEFAULT_NOTE_FILTERS, sort: filters.sort });
+  }
+
+  function goToComposer() {
+    composerRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    composerRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
   }
 
   return (
@@ -68,41 +71,23 @@ export default function NotesPage() {
       </div>
 
       <div className="flex flex-col gap-6">
-        <NoteFiltersBar
-          filters={filters}
-          accounts={accounts}
-          onChange={setFilters}
-        />
+        <NoteFiltersBar filters={filters} accounts={accounts} onChange={setFilters} />
 
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "var(--color-card)" }}>
-          <div
-            className="flex items-center justify-between gap-4 px-4 py-3"
-            style={{ borderBottom: "1px solid var(--color-border)" }}
-          >
-            <p className="text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
-              {loading ? "Loading…" : filtersActive ? `Showing ${feed.length} of ${notes.length} notes` : `${notes.length} ${notes.length === 1 ? "note" : "notes"}`}
-            </p>
-            {filtersActive && (
-              <button onClick={clearFilters} className="text-xs font-medium" style={{ color: "var(--color-yellow)" }}>
-                Clear filters
-              </button>
-            )}
-          </div>
-
+        <ListCard summary={feedSummary()} onClearFilters={filtersActive ? clearFilters : undefined}>
           {!loading && feed.length === 0 ? (
-            <p className="text-sm px-4 py-6 text-center" style={{ color: "var(--color-muted)" }}>
+            <ListCardEmpty>
               {notes.length === 0
                 ? "No notes yet. Write one below, or click a point on the dashboard chart."
                 : "No notes match these filters."}
-            </p>
+            </ListCardEmpty>
           ) : (
-            <div className="px-4 -mb-px">
+            <ListCardRows>
               {feed.map((note) => (
                 <NoteItem key={note._id} note={note} onChanged={fetchNotes} accounts={accounts} />
               ))}
-            </div>
+            </ListCardRows>
           )}
-        </div>
+        </ListCard>
 
         <div ref={composerRef} style={{ scrollMarginBottom: 32 }}>
           <Card>

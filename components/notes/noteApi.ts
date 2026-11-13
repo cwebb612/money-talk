@@ -30,5 +30,3 @@ export async function updateNote(id: string, input: NoteInput): Promise<NoteDTO>
 export async function deleteNote(id: string): Promise<void> {
   await send(`/api/notes/${id}`, "DELETE");
 }
-
-export { todayString } from "../../lib/utils/filters";

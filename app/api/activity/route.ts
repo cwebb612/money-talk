@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import { cookies } from "next/headers";
 import { verifyToken } from "../../../lib/auth/session";
 import connect from "../../../lib/db/mongodb";
 import Activity from "../../../lib/db/models/activity";
 import Account from "../../../lib/db/models/account";
-import { Types } from "mongoose";
 import { isDateString } from "../../../lib/utils/filters";
 
 async function getUserId(): Promise<string | null> {

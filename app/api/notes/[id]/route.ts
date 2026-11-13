@@ -4,9 +4,9 @@ import { Types } from "mongoose";
 import { verifyToken } from "../../../../lib/auth/session";
 import connect from "../../../../lib/db/mongodb";
 import Note from "../../../../lib/db/models/note";
-import Account from "../../../../lib/db/models/account";
-import { findNoteById } from "../../../../lib/db/noteQueries";
-import { isValidNoteDate, validateNoteBody } from "../../../../lib/utils/notes";
+import { accountExists, findNoteById } from "../../../../lib/db/noteQueries";
+import { validateNoteBody } from "../../../../lib/utils/notes";
+import { isDateString } from "../../../../lib/utils/filters";
 
 async function getUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -32,7 +32,7 @@ export async function PATCH(
     const bodyError = validateNoteBody(body.body);
     if (bodyError) return NextResponse.json({ error: bodyError }, { status: 400 });
   }
-  if (body.date !== undefined && body.date !== null && !isValidNoteDate(body.date)) {
+  if (body.date != null && !isDateString(body.date)) {
     return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
   }
 
@@ -40,9 +40,8 @@ export async function PATCH(
   const note = await Note.findById(id);
   if (!note) return NextResponse.json({ error: "Note not found" }, { status: 404 });
 
-  if (body.accountId != null) {
-    const exists = Types.ObjectId.isValid(body.accountId) && (await Account.exists({ _id: body.accountId }));
-    if (!exists) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (body.accountId != null && !(await accountExists(body.accountId))) {
+    return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
   if (body.body !== undefined) note.body = body.body.trim();

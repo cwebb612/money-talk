@@ -4,6 +4,7 @@ import { verifyToken } from "../../../../lib/auth/session";
 import connect from "../../../../lib/db/mongodb";
 import Account from "../../../../lib/db/models/account";
 import Activity from "../../../../lib/db/models/activity";
+import Note from "../../../../lib/db/models/note";
 import { calculateAccountValue } from "../../../../lib/utils/money";
 import { Types } from "mongoose";
 
@@ -101,5 +102,6 @@ export async function DELETE(
   if (!account) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 
   await account.deleteOne();
+  await Note.updateMany({ accountId: account._id }, { accountId: null });
   return NextResponse.json({ ok: true });
 }

@@ -4,13 +4,13 @@ import Account from "./models/account";
 import User from "./models/user";
 import { NoteDTO, sortNotes } from "../utils/notes";
 
-interface NoteFilter {
+interface NoteQuery {
   id?: string;
   accountId?: string;
   datedOnly?: boolean;
 }
 
-export async function findNotes(filter: NoteFilter = {}): Promise<NoteDTO[]> {
+export async function findNotes(filter: NoteQuery = {}): Promise<NoteDTO[]> {
   const query: Record<string, unknown> = {};
   if (filter.id) query._id = new Types.ObjectId(filter.id);
   if (filter.accountId) query.accountId = new Types.ObjectId(filter.accountId);
@@ -44,6 +44,11 @@ export async function findNotes(filter: NoteFilter = {}): Promise<NoteDTO[]> {
       };
     })
   );
+}
+
+export async function accountExists(accountId: unknown): Promise<boolean> {
+  if (typeof accountId !== "string" || !Types.ObjectId.isValid(accountId)) return false;
+  return (await Account.exists({ _id: accountId })) !== null;
 }
 
 export async function findNoteById(id: string): Promise<NoteDTO | null> {

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import NoteForm, { NoteAccountOption } from "./NoteForm";
+import NoteForm from "./NoteForm";
+import { AccountOption } from "../accounts/useAccountOptions";
 import { deleteNote, updateNote } from "./noteApi";
 import { NoteDTO, formatNoteDate } from "../../lib/utils/notes";
 
@@ -10,7 +11,7 @@ interface NoteItemProps {
   note: NoteDTO;
   onChanged: () => void;
   showAccount?: boolean;
-  accounts?: NoteAccountOption[];
+  accounts?: AccountOption[];
 }
 
 export default function NoteItem({ note, onChanged, showAccount = true, accounts }: NoteItemProps) {

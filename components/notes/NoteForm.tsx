@@ -6,8 +6,9 @@ import Button from "../ui/Button";
 import Popconfirm from "../ui/Popconfirm";
 import Select from "../ui/Select";
 import PillToggle from "../ui/PillToggle";
+import { AccountOption } from "../accounts/useAccountOptions";
 import { NOTE_MAX_LENGTH } from "../../lib/utils/notes";
-import { todayString } from "./noteApi";
+import { todayString } from "../../lib/utils/filters";
 
 const DATE_MODES = [
   { value: "dated", label: "On a date" },
@@ -23,14 +24,9 @@ export interface NoteFormValues {
   accountId?: string | null;
 }
 
-export interface NoteAccountOption {
-  _id: string;
-  name: string;
-}
-
 interface NoteFormProps {
   initial?: Partial<NoteFormValues>;
-  accounts?: NoteAccountOption[];
+  accounts?: AccountOption[];
   submitLabel?: string;
   placeholder?: string;
   autoFocus?: boolean;
@@ -53,10 +49,10 @@ export default function NoteForm({
   const [date, setDate] = useState(initial?.date ?? todayString());
   const [undated, setUndated] = useState(!initial?.date);
   const [accountId, setAccountId] = useState(initial?.accountId ?? "");
-  const dateInputId = useId();
-  const accountSelectId = useId();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const dateInputId = useId();
+  const accountSelectId = useId();
 
   const canSave = body.trim().length > 0 && (undated || date !== "") && !saving;
 

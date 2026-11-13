@@ -5,7 +5,7 @@ import { Search, X } from "lucide-react";
 import Select from "../ui/Select";
 import PillToggle from "../ui/PillToggle";
 import FilterField from "../ui/FilterField";
-import { NoteAccountOption } from "./NoteForm";
+import { AccountOption } from "../accounts/useAccountOptions";
 import { NO_ACCOUNT, NoteFilters } from "../../lib/utils/notes";
 import { DATE_RANGE_OPTIONS, DateRange, SORT_OPTIONS, SortOrder } from "../../lib/utils/filters";
 
@@ -16,7 +16,7 @@ const UNDATED_OPTIONS = [
 
 interface NoteFiltersBarProps {
   filters: NoteFilters;
-  accounts: NoteAccountOption[];
+  accounts: AccountOption[];
   onChange: (filters: NoteFilters) => void;
 }
 
