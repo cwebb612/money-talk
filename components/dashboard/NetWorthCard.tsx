@@ -5,6 +5,7 @@ import NetWorthHeader from "./NetWorthHeader";
 import NetWorthChart from "./NetWorthChart";
 import { formatUSD } from "../../lib/utils/money";
 import { CollapsibleHeader, useCollapsible } from "../ui/Collapsible";
+import { NoteDTO } from "../../lib/utils/notes";
 
 type Preset = "1M" | "6M" | "YTD" | "1Y" | "5Y" | "All";
 
@@ -31,9 +32,11 @@ interface Props {
   value: number;
   updatedAt: string;
   chartData: { date: string; value: number }[];
+  notes: NoteDTO[];
+  onNotesChanged: () => void;
 }
 
-export default function NetWorthCard({ value, updatedAt, chartData }: Props) {
+export default function NetWorthCard({ value, updatedAt, chartData, notes, onNotesChanged }: Props) {
   const { expanded, collapsible, toggle } = useCollapsible();
   const [preset, setPreset] = useState<Preset>("All");
 
@@ -92,7 +95,7 @@ export default function NetWorthCard({ value, updatedAt, chartData }: Props) {
               </span>
             )}
           </div>
-          <NetWorthChart data={filteredData} />
+          <NetWorthChart data={filteredData} notes={notes} onNotesChanged={onNotesChanged} />
         </div>
       )}
     </div>

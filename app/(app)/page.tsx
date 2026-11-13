@@ -4,14 +4,18 @@ import { verifyToken } from "../../lib/auth/session";
 import connect from "../../lib/db/mongodb";
 import Account from "../../lib/db/models/account";
 import Activity from "../../lib/db/models/activity";
+import { findNotes } from "../../lib/db/noteQueries";
 import DashboardClient from "../../components/dashboard/DashboardClient";
 import { PageContainer } from "../../components/ui/DashboardGrid";
 
 async function getDashboardData() {
   await connect();
 
-  const accounts = await Account.find().sort({ type: 1 }).lean();
-  const activities = await Activity.find().sort({ recordedAt: 1 }).lean();
+  const [accounts, activities, notes] = await Promise.all([
+    Account.find().sort({ type: 1 }).lean(),
+    Activity.find().sort({ recordedAt: 1 }).lean(),
+    findNotes({ datedOnly: true }),
+  ]);
 
   const lastUpdated =
     activities.length > 0
@@ -46,6 +50,7 @@ async function getDashboardData() {
       value: act.value,
     })),
     lastUpdated,
+    notes,
   };
 }
 
@@ -56,7 +61,7 @@ export default async function DashboardPage() {
 
   if (!payload?.userId) return null;
 
-  const { accounts, activities, lastUpdated } = await getDashboardData();
+  const { accounts, activities, lastUpdated, notes } = await getDashboardData();
 
   return (
     <PageContainer>
@@ -74,7 +79,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <DashboardClient accounts={accounts} activities={activities} updatedAt={lastUpdated} />
+        <DashboardClient accounts={accounts} activities={activities} notes={notes} updatedAt={lastUpdated} />
       )}
     </PageContainer>
   );

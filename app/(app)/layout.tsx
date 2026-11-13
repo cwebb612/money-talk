@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Heart, Moon, User, Users, Key, SquareArrowRight, Calculator, History } from "lucide-react";
+import { Heart, Moon, User, Users, Key, SquareArrowRight, Calculator, History, NotebookPen } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -93,6 +93,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             aria-label="Activity Log"
           >
             <History size={16} />
+          </Link>
+
+          <Link
+            href="/notes"
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 32,
+              height: 32,
+              border: "1px solid var(--color-border)",
+              backgroundColor: pathname === "/notes" ? "var(--color-border)" : "transparent",
+              color: pathname === "/notes" ? "var(--color-yellow)" : "var(--color-muted)",
+            }}
+            aria-label="Notes"
+          >
+            <NotebookPen size={16} />
           </Link>
 
           <div ref={menuRef} style={{ position: "relative" }}>

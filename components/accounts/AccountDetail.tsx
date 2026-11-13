@@ -5,6 +5,7 @@ import ExternalLink from "../ui/ExternalLink";
 import NetWorthChart from "../dashboard/NetWorthChart";
 import { AccountType } from "../../lib/db/models/account";
 import { formatUSD } from "../../lib/utils/money";
+import { NoteDTO } from "../../lib/utils/notes";
 
 const STALE_AFTER_DAYS = 30;
 
@@ -28,9 +29,11 @@ interface AccountDetailProps {
   account: AccountDoc;
   lastUpdated: string | null;
   chartData: { date: string; value: number }[];
+  notes: NoteDTO[];
+  onNotesChanged: () => void;
 }
 
-export default function AccountDetail({ account, lastUpdated, chartData }: AccountDetailProps) {
+export default function AccountDetail({ account, lastUpdated, chartData, notes, onNotesChanged }: AccountDetailProps) {
   return (
     <Card>
       <div className="flex items-start justify-between mb-4">
@@ -72,7 +75,13 @@ export default function AccountDetail({ account, lastUpdated, chartData }: Accou
         </div>
       </div>
       <div style={{ borderTop: "1px solid var(--color-border)", marginLeft: "-1rem", marginRight: "-1rem", paddingTop: "1rem", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}>
-        <NetWorthChart data={chartData} label="Value" />
+        <NetWorthChart
+          data={chartData}
+          label="Value"
+          notes={notes}
+          onNotesChanged={onNotesChanged}
+          noteAccountId={account._id}
+        />
       </div>
     </Card>
   );

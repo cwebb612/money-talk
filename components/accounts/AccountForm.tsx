@@ -6,6 +6,7 @@ import Button from "../ui/Button";
 import HoldingsEditor, { Holding } from "./HoldingsEditor";
 import { AccountType } from "../../lib/db/models/account";
 import { parseNumeric, formatNumeric } from "../../lib/utils/money";
+import { NOTE_MAX_LENGTH } from "../../lib/utils/notes";
 
 export interface AccountFormData {
   name: string;
@@ -15,6 +16,7 @@ export interface AccountFormData {
   balance: number;
   holdings: Holding[];
   recordedAt?: string;
+  chartNote?: string;
 }
 
 interface AccountFormProps {
@@ -46,6 +48,7 @@ export default function AccountForm({
   const [balanceStr, setBalanceStr] = useState(formatNumeric(initial?.balance ?? 0));
   const [holdings, setHoldings] = useState<Holding[]>(initial?.holdings ?? []);
   const [recordedAt, setRecordedAt] = useState(initial?.recordedAt ?? today);
+  const [chartNote, setChartNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -54,7 +57,7 @@ export default function AccountForm({
     setError("");
     setLoading(true);
     try {
-      await onSubmit({ name, type, institutionUrl, notes, balance: parseNumeric(balanceStr), holdings, recordedAt: showDateField ? recordedAt : undefined });
+      await onSubmit({ name, type, institutionUrl, notes, balance: parseNumeric(balanceStr), holdings, recordedAt: showDateField ? recordedAt : undefined, chartNote: showDateField ? chartNote.trim() : undefined });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -114,7 +117,7 @@ export default function AccountForm({
 
       <div>
         <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
-          Notes (optional)
+          Account Notes (optional)
         </label>
         <textarea
           value={notes}
@@ -175,6 +178,34 @@ export default function AccountForm({
             onChange={(e) => setRecordedAt(e.target.value)}
             required
           />
+        </div>
+      )}
+
+      {showDateField && (
+        <div>
+          <label className="block text-xs mb-1" style={{ color: "var(--color-muted)" }}>
+            Chart Note (optional)
+          </label>
+          <textarea
+            value={chartNote}
+            onChange={(e) => setChartNote(e.target.value)}
+            maxLength={NOTE_MAX_LENGTH}
+            placeholder="e.g. Paid off the car loan"
+            rows={2}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-bg)",
+              color: "var(--color-text)",
+              fontSize: "0.875rem",
+              resize: "vertical",
+            }}
+          />
+          <p className="text-xs mt-1" style={{ color: "var(--color-muted)" }}>
+            Shows on the net worth chart on this date.
+          </p>
         </div>
       )}
 

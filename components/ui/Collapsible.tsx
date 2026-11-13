@@ -2,9 +2,9 @@
 
 import { ReactNode, useState, useSyncExternalStore } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { minWidthQuery } from "../../lib/breakpoints";
 
-// Matches Tailwind's `lg` breakpoint, where DashboardGrid switches to the desktop layout.
-const DESKTOP_QUERY = "(min-width: 1024px)";
+const DESKTOP_QUERY = minWidthQuery("desktop");
 
 function subscribeToDesktop(onChange: () => void) {
   const query = window.matchMedia(DESKTOP_QUERY);

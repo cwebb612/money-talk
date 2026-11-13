@@ -8,7 +8,10 @@ import { AccountFormData } from "../../../../components/accounts/AccountForm";
 import HoldingsPieChart from "../../../../components/accounts/HoldingsPieChart";
 import AccountActivityCard from "../../../../components/accounts/AccountActivityCard";
 import AccountReconcileCard from "../../../../components/accounts/AccountReconcileCard";
+import AccountNotesCard from "../../../../components/notes/AccountNotesCard";
 import { PageContainer, DashboardGrid, GridModule } from "../../../../components/ui/DashboardGrid";
+import { createNote } from "../../../../components/notes/noteApi";
+import { NoteDTO } from "../../../../lib/utils/notes";
 
 interface AccountData {
   _id: string;
@@ -31,7 +34,15 @@ export default function AccountDetailPage() {
 
   const [account, setAccount] = useState<AccountData | null>(null);
   const [chartData, setChartData] = useState<{ date: string; value: number }[]>([]);
+  const [notes, setNotes] = useState<NoteDTO[]>([]);
   const [loading, setLoading] = useState(true);
+
+  function fetchNotes() {
+    fetch(`/api/notes?accountId=${id}`)
+      .then((r) => r.json())
+      .then((data: NoteDTO[]) => setNotes(data))
+      .catch(() => {});
+  }
 
   function fetchActivity() {
     fetch(`/api/accounts/${id}/activity`)
@@ -52,9 +63,10 @@ export default function AccountDetailPage() {
       .catch(() => setLoading(false));
 
     fetchActivity();
+    fetchNotes();
   }, [id]);
 
-  async function handleUpdate(data: AccountFormData) {
+  async function handleUpdate({ chartNote, ...data }: AccountFormData) {
     const res = await fetch(`/api/accounts/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -69,6 +81,11 @@ export default function AccountDetailPage() {
     const updated = await res.json();
     setAccount(updated);
     fetchActivity();
+
+    if (chartNote && data.recordedAt) {
+      await createNote({ body: chartNote, date: data.recordedAt, accountId: id });
+      fetchNotes();
+    }
   }
 
   function handleActivityChanged() {
@@ -132,6 +149,8 @@ export default function AccountDetailPage() {
             account={account}
             lastUpdated={chartData.length > 0 ? chartData[chartData.length - 1].date : null}
             chartData={chartData}
+            notes={notes}
+            onNotesChanged={fetchNotes}
           />
           <AccountReconcileCard
             account={account}
@@ -139,6 +158,7 @@ export default function AccountDetailPage() {
             onRefreshPrices={handleRefreshPrices}
             onDelete={handleDelete}
           />
+          <AccountNotesCard accountId={id} notes={notes} onChanged={fetchNotes} />
         </GridModule>
         <GridModule span="side">
           {account.type === "investment" && (
