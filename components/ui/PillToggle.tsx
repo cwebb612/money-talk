@@ -14,7 +14,7 @@ interface PillToggleProps<T extends string> {
 
 export default function PillToggle<T extends string>({ value, options, onChange, ariaLabel }: PillToggleProps<T>) {
   return (
-    <div role="group" aria-label={ariaLabel} className="flex gap-1">
+    <div role="group" aria-label={ariaLabel} className="flex flex-wrap gap-1">
       {options.map((option) => {
         const selected = option.value === value;
         return (

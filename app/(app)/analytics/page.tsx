@@ -4,10 +4,10 @@ import connect from "../../../lib/db/mongodb";
 import Account from "../../../lib/db/models/account";
 import Activity from "../../../lib/db/models/activity";
 import TrendsCard from "../../../components/analytics/TrendsCard";
-import PredictionsCard from "../../../components/analytics/PredictionsCard";
+import GrowthCalculatorCard from "../../../components/analytics/growth/GrowthCalculatorCard";
 import MonthlyChangeCard from "../../../components/analytics/MonthlyChangeCard";
 import AssetsLiabilitiesCard from "../../../components/analytics/AssetsLiabilitiesCard";
-import { buildNetWorthSeries, buildAssetLiabilitySeries } from "../../../lib/utils/netWorth";
+import { buildNetWorthSeries, buildAssetLiabilitySeries, currentTotals } from "../../../lib/utils/netWorth";
 import { PageContainer, DashboardGrid, GridModule } from "../../../components/ui/DashboardGrid";
 
 async function getAnalyticsData() {
@@ -35,11 +35,11 @@ async function getAnalyticsData() {
     history: accountHistoryMap.get(a._id.toString()) ?? [],
   }));
 
-  return { chartData, accountData, assetLiabilitySeries };
+  return { chartData, accountData, assetLiabilitySeries, totals: currentTotals(accounts) };
 }
 
 export default async function AnalyticsPage() {
-  const { chartData, accountData, assetLiabilitySeries } = await getAnalyticsData();
+  const { chartData, accountData, assetLiabilitySeries, totals } = await getAnalyticsData();
 
   return (
     <PageContainer className="flex flex-col gap-6">
@@ -60,7 +60,7 @@ export default async function AnalyticsPage() {
           <AssetsLiabilitiesCard series={assetLiabilitySeries} />
         </GridModule>
         <GridModule span="half" stretch>
-          <PredictionsCard chartData={chartData} />
+          <GrowthCalculatorCard chartData={chartData} totals={totals} />
         </GridModule>
       </DashboardGrid>
     </PageContainer>

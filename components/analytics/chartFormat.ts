@@ -21,7 +21,7 @@ export function formatSignedUSD(value: number): string {
 
 export function formatMonth(month: string): string {
   const [year, m] = month.split("-").map(Number);
-  return new Date(year, m - 1, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return formatMonthYear(new Date(year, m - 1, 1).getTime());
 }
 
 export function formatMonthTick(ts: number, index: number): string {
@@ -32,4 +32,8 @@ export function formatMonthTick(ts: number, index: number): string {
 
 export function formatTooltipDate(ts: unknown): string {
   return new Date(ts as number).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+export function formatMonthYear(ts: number): string {
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }

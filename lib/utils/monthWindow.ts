@@ -27,6 +27,11 @@ export function startOfMonth(ts: number): number {
   return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
 }
 
+export function addMonths(ts: number, months: number): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth() + months, 1).getTime();
+}
+
 export function startOfDay(ts: number): number {
   const d = new Date(ts);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

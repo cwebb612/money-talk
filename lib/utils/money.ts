@@ -21,6 +21,22 @@ export function formatUSD(value: number): string {
   }).format(value);
 }
 
+const wholeUSD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const compactUSD = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function formatWholeUSD(value: number): string {
+  return wholeUSD.format(value);
+}
+
+export function formatCompactUSD(value: number): string {
+  return compactUSD.format(value);
+}
+
 /** Strip commas and parse to a number. Returns 0 for empty/invalid input. */
 export function parseNumeric(str: string): number {
   return parseFloat(str.replace(/,/g, "")) || 0;
