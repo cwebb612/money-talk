@@ -29,6 +29,7 @@ import {
   isFireMode,
   isPercentMetric,
   targetAt,
+  targetModeDescription,
 } from "../../lib/utils/goals";
 
 export interface GoalFormActions {
@@ -185,16 +186,21 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
 
       <div className="flex flex-col gap-3">
         {!percent && (
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-xs" style={mutedStyle}>
-              Target
-            </span>
-            <PillToggle
-              ariaLabel="Target type"
-              value={fields.targetMode}
-              options={modes.map((m) => ({ value: m, label: TARGET_MODE_LABELS[m] }))}
-              onChange={setMode}
-            />
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-xs" style={mutedStyle}>
+                Target
+              </span>
+              <PillToggle
+                ariaLabel="Target type"
+                value={fields.targetMode}
+                options={modes.map((m) => ({ value: m, label: TARGET_MODE_LABELS[m] }))}
+                onChange={setMode}
+              />
+            </div>
+            <p className="text-xs" style={mutedStyle}>
+              {targetModeDescription(fields.targetMode, direction)}
+            </p>
           </div>
         )}
 

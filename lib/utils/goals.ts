@@ -35,6 +35,23 @@ export const TARGET_MODE_LABELS: Record<TargetMode, string> = {
   coastFire: "Coast FIRE",
 };
 
+export function targetModeDescription(mode: TargetMode, direction: GoalDirection): string {
+  switch (mode) {
+    case "fixed":
+      return "Reach one set amount.";
+    case "growing":
+      return "The target goes up by a set percent each year.";
+    case "contribution":
+      return direction === "decrease"
+        ? "Pay down a set amount from the value on the start date."
+        : "Add a set amount to the value on the start date. Market growth counts.";
+    case "fire":
+      return "Invest enough to live on your investments. The target is your yearly spending divided by the withdrawal rate.";
+    case "coastFire":
+      return "Invest enough now that growth alone gets you to FIRE by your retirement age.";
+  }
+}
+
 export const GOAL_TITLE_MAX_LENGTH = 100;
 export const GOAL_NOTES_MAX_LENGTH = 2000;
 export const DEFAULT_MONTHLY_SPENDING = 4000;
