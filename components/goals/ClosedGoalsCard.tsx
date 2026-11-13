@@ -16,6 +16,18 @@ interface Props {
 
 export default function ClosedGoalsCard({ goals, onChanged }: Props) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  async function run(action: () => Promise<unknown>) {
+    setError("");
+    try {
+      await action();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      onChanged();
+    }
+  }
 
   return (
     <Card>
@@ -52,10 +64,7 @@ export default function ClosedGoalsCard({ goals, onChanged }: Props) {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={async () => {
-                    await updateGoal(goal._id, { status: "active" });
-                    onChanged();
-                  }}
+                  onClick={() => run(() => updateGoal(goal._id, { status: "active" }))}
                   className="text-xs font-medium"
                   style={{ color: "var(--color-yellow)" }}
                 >
@@ -63,10 +72,7 @@ export default function ClosedGoalsCard({ goals, onChanged }: Props) {
                 </button>
                 <Popconfirm
                   title="Delete this goal?"
-                  onConfirm={async () => {
-                    await deleteGoal(goal._id);
-                    onChanged();
-                  }}
+                  onConfirm={() => run(() => deleteGoal(goal._id))}
                 >
                   <button type="button" className="text-xs font-medium" style={{ color: "var(--color-red)" }}>
                     Delete
@@ -77,6 +83,7 @@ export default function ClosedGoalsCard({ goals, onChanged }: Props) {
           ))}
         </ul>
       )}
+      {error && <p className="text-sm mt-2" style={{ color: "var(--color-red)" }}>{error}</p>}
     </Card>
   );
 }

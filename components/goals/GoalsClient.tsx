@@ -46,8 +46,11 @@ export default function GoalsClient({ goals, accounts, activities, today }: Prop
   async function move(index: number, direction: -1 | 1) {
     const ids = active.map((g) => g._id);
     [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
-    await reorderGoals(ids);
-    refresh();
+    try {
+      await reorderGoals(ids);
+    } finally {
+      refresh();
+    }
   }
 
   async function closeAfter(action: () => Promise<unknown>) {

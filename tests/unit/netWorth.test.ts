@@ -1,4 +1,4 @@
-import { buildAssetLiabilitySeries } from "../../lib/utils/netWorth";
+import { buildAssetLiabilitySeries, buildNetWorthSeries } from "../../lib/utils/netWorth";
 
 const accountTypes = new Map([
   ["checking", "cash"],
@@ -37,5 +37,23 @@ describe("buildAssetLiabilitySeries", () => {
       accountTypes
     );
     expect(series).toEqual([{ date: "2026-09-01", assets: 0, liabilities: 0 }]);
+  });
+});
+
+describe("buildNetWorthSeries", () => {
+  it("subtracts liabilities from assets and carries values forward", () => {
+    const series = buildNetWorthSeries(
+      [
+        { date: "2026-09-01", accountId: "checking", value: 1000 },
+        { date: "2026-09-01", accountId: "mortgage", value: 400 },
+        { date: "2026-10-01", accountId: "brokerage", value: 500 },
+        { date: "2026-10-01", accountId: "unknown", value: 9999 },
+      ],
+      accountTypes
+    );
+    expect(series).toEqual([
+      { date: "2026-09-01", value: 600 },
+      { date: "2026-10-01", value: 1100 },
+    ]);
   });
 });

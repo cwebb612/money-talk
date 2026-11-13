@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 import { verifyToken } from "../../../../lib/auth/session";
 import connect from "../../../../lib/db/mongodb";
 import Goal from "../../../../lib/db/models/goal";
-import { prepareGoalFields, startValueFor, toGoalDTO } from "../../../../lib/db/goalQueries";
+import { goalDocFields, goalStart, prepareGoalFields, toGoalDTO } from "../../../../lib/db/goalQueries";
 import { GOAL_STATUSES, GoalFields, GoalStatus, goalFieldsOf, validateGoalFields } from "../../../../lib/utils/goals";
 import { todayString } from "../../../../lib/utils/filters";
 
@@ -29,10 +29,6 @@ const EDITABLE_KEYS: (keyof GoalFields)[] = [
   "showOnDashboard",
   "startDate",
 ];
-
-function sameIds(a: string[], b: string[]): boolean {
-  return a.length === b.length && a.every((id) => b.includes(id));
-}
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -63,21 +59,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const prepared = await prepareGoalFields(fields);
     if ("error" in prepared) return NextResponse.json({ error: prepared.error }, { status: prepared.status });
 
-    const { startDate: requestedStart, ...stored } = fields;
-    Object.assign(update, stored, {
-      accountIds: fields.accountIds.map((accountId) => new Types.ObjectId(accountId)),
-      direction: prepared.direction,
-    });
+    const start = await goalStart(fields, prepared.accounts, goal);
+    if ("error" in start) return NextResponse.json({ error: start.error }, { status: start.status });
 
-    const today = todayString();
-    const startDate = requestedStart ?? (fields.targetMode === "contribution" ? goal.startDate : today);
-    if (startDate > today) return NextResponse.json({ error: "Start date cannot be in the future" }, { status: 400 });
-    const trackingChanged = fields.metric !== goal.metric || !sameIds(fields.accountIds, goal.accountIds);
-    const startMoved = fields.targetMode === "contribution" && startDate !== goal.startDate;
-    if (trackingChanged || startMoved) {
-      update.startDate = startDate;
-      update.startValue = await startValueFor(fields, prepared.accounts, startDate, today);
-    }
+    Object.assign(update, goalDocFields(fields, prepared.direction), start);
   }
 
   if (body.status !== undefined) {
@@ -86,7 +71,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     update.achievedAt = status === "achieved" ? goal.achievedAt ?? todayString() : null;
   }
 
-  const updated = await Goal.findByIdAndUpdate(id, update, { new: true }).lean();
+  const updated = await Goal.findByIdAndUpdate(id, update, { returnDocument: "after", runValidators: true }).lean();
   if (!updated) return NextResponse.json({ error: "Goal not found" }, { status: 404 });
   return NextResponse.json(toGoalDTO(updated));
 }

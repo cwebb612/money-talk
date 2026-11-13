@@ -14,7 +14,6 @@ import {
   suggestGoals,
   targetAt,
   validateGoalFields,
-  valueAtStart,
   valueOn,
 } from "../../lib/utils/goals";
 
@@ -306,7 +305,7 @@ describe("debt to assets", () => {
   });
 });
 
-describe("valueOn and valueAtStart", () => {
+describe("valueOn", () => {
   const history = [
     { date: "2026-01-01", value: 100 },
     { date: "2026-03-01", value: 300 },
@@ -314,13 +313,8 @@ describe("valueOn and valueAtStart", () => {
 
   it("returns the last value on or before a date", () => {
     expect(valueOn(history, "2026-02-15")).toBe(100);
+    expect(valueOn(history, "2026-03-01")).toBe(300);
     expect(valueOn(history, "2025-12-01")).toBeNull();
-  });
-
-  it("uses history for a past start date and current values for today", () => {
-    const g = { metric: "netWorth" as const, accountIds: [] };
-    expect(valueAtStart(g, accounts, history, "2026-02-01", "2026-07-01")).toBe(100);
-    expect(valueAtStart(g, accounts, history, "2026-07-01", "2026-07-01")).toBe(50000);
   });
 });
 

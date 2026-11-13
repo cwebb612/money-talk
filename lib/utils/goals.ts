@@ -1,4 +1,5 @@
 import { DatedValue, dateToTimestamp } from "./monthWindow";
+import { ActivityRecord, mapDailyLatest } from "./netWorth";
 import { averageMonthlyChange } from "./projection";
 import { coastFireNumber, fireNumber } from "./fire";
 import { clamp } from "./math";
@@ -81,8 +82,7 @@ export interface GoalAccount {
   currentValue: number;
 }
 
-type TargetFields = Pick<GoalDTO, "targetMode" | "targetAmount" | "targetGrowthRate" | "fireInputs" | "startDate" | "direction" | "startValue">;
-type ProgressFields = TargetFields;
+type GoalTarget = Pick<GoalDTO, "targetMode" | "targetAmount" | "targetGrowthRate" | "fireInputs" | "startDate" | "direction" | "startValue">;
 
 export const DEFAULT_FIRE_INPUTS: FireInputs = {
   annualSpending: 48000,
@@ -196,13 +196,13 @@ function grow(amount: number, ratePercent: number, years: number): number {
 }
 
 export function baseTarget(goal: Pick<GoalFields, "targetMode" | "targetAmount" | "fireInputs">): number {
-  if ((goal.targetMode === "fire" || goal.targetMode === "coastFire") && goal.fireInputs) {
+  if (isFireMode(goal.targetMode) && goal.fireInputs) {
     return fireNumber(goal.fireInputs.annualSpending, goal.fireInputs.withdrawalRate);
   }
   return goal.targetAmount;
 }
 
-export function targetAt(goal: TargetFields, date: string): number {
+export function targetAt(goal: GoalTarget, date: string): number {
   const years = Math.max(0, yearsBetween(goal.startDate, date));
   const base = baseTarget(goal);
   switch (goal.targetMode) {
@@ -230,7 +230,7 @@ export interface GoalProgress {
   reached: boolean;
 }
 
-function progressPercent(goal: ProgressFields, current: number, target: number): number {
+function progressPercent(goal: GoalTarget, current: number, target: number): number {
   const { direction, startValue: start } = goal;
   const fromZero = goal.targetMode !== "contribution" && direction === "increase" && target > 0 && start >= 0;
   if (fromZero) return clamp((current / target) * 100, 0, 100);
@@ -240,7 +240,7 @@ function progressPercent(goal: ProgressFields, current: number, target: number):
   return clamp((done / span) * 100, 0, 100);
 }
 
-export function goalProgress(goal: ProgressFields, current: number, date: string): GoalProgress {
+export function goalProgress(goal: GoalTarget, current: number, date: string): GoalProgress {
   const target = targetAt(goal, date);
   const increase = goal.direction === "increase";
   const reached = increase ? current >= target : current <= target;
@@ -255,32 +255,18 @@ export function goalProgress(goal: ProgressFields, current: number, date: string
 
 export function buildMetricSeries(
   goal: Pick<GoalFields, "metric" | "accountIds">,
-  activities: Array<{ date: string; accountId: { toString(): string }; value: number }>,
+  activities: ActivityRecord[],
   accountTypes: Map<string, string>
 ): DatedValue[] {
-  const dayMap = new Map<string, Map<string, number>>();
-  for (const activity of activities) {
-    if (!dayMap.has(activity.date)) dayMap.set(activity.date, new Map());
-    dayMap.get(activity.date)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  const latestValues = new Map<string, number>();
-  const series: DatedValue[] = [];
-
-  for (const day of [...dayMap.keys()].sort()) {
-    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
-
+  return mapDailyLatest(activities, (date, latestValues) => {
     const known: GoalAccount[] = [];
     latestValues.forEach((currentValue, _id) => {
       const type = accountTypes.get(_id);
       if (type) known.push({ _id, type, currentValue });
     });
-
-    if (goal.metric === "accounts" && selectedAccounts(goal, known).length === 0) continue;
-    series.push({ date: day, value: metricValue(goal, known) });
-  }
-
-  return series;
+    if (goal.metric === "accounts" && selectedAccounts(goal, known).length === 0) return null;
+    return { date, value: metricValue(goal, known) };
+  });
 }
 
 const MAX_PROJECTION_MONTHS = 1200;
@@ -291,7 +277,7 @@ export function addMonthsToDate(date: string, months: number): string {
 }
 
 export function projectCompletion(
-  goal: ProgressFields,
+  goal: GoalTarget,
   history: DatedValue[],
   current: number,
   today: string
@@ -310,7 +296,7 @@ export function projectCompletion(
 }
 
 export function requiredMonthly(
-  goal: ProgressFields & Pick<GoalFields, "targetDate" | "metric">,
+  goal: GoalTarget & Pick<GoalFields, "targetDate" | "metric">,
   current: number,
   today: string
 ): number | null {
@@ -340,17 +326,6 @@ export function valueOn(history: DatedValue[], date: string): number | null {
     found = point.value;
   }
   return found;
-}
-
-export function valueAtStart(
-  goal: Pick<GoalFields, "metric" | "accountIds">,
-  accounts: GoalAccount[],
-  history: DatedValue[],
-  startDate: string,
-  today: string
-): number {
-  if (startDate >= today) return metricValue(goal, accounts);
-  return valueOn(history, startDate) ?? 0;
 }
 
 export const SUGGESTION_GROUPS = ["Debt", "Milestones", "Growth", "Savings and retirement"] as const;
@@ -493,6 +468,7 @@ function isNumberIn(value: unknown, min: number, max: number): value is number {
 }
 
 const MAX_AMOUNT = 1e12;
+export const FIRE_DEBT_ERROR = "A FIRE goal cannot track debt";
 
 function validateFireInputs(input: unknown, mode: TargetMode): string | null {
   if (typeof input !== "object" || input === null) return "fireInputs is required for FIRE goals";
@@ -503,7 +479,7 @@ function validateFireInputs(input: unknown, mode: TargetMode): string | null {
     if (!isNumberIn(f.expectedReturn, 0, 100)) return "Expected return must be between 0% and 100%";
     if (!isNumberIn(f.currentAge, 0, 120)) return "Current age must be between 0 and 120";
     if (!isNumberIn(f.retirementAge, 0, 120)) return "Retirement age must be between 0 and 120";
-    if ((f.retirementAge as number) <= (f.currentAge as number)) return "Retirement age must be more than current age";
+    if (f.retirementAge <= f.currentAge) return "Retirement age must be more than current age";
   }
   return null;
 }
@@ -532,7 +508,6 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
 
   if (!TARGET_MODES.includes(body.targetMode as TargetMode)) return { error: "Invalid target type" };
   const targetMode = body.targetMode as TargetMode;
-  const isFire = isFireMode(targetMode);
   if (isPercentMetric(metric) && targetMode !== "fixed") return { error: "A debt to assets goal must use a fixed target" };
 
   const targetGrowthRate = body.targetGrowthRate ?? defaults.targetGrowthRate;
@@ -540,8 +515,8 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
 
   let targetAmount = 0;
   let fireInputs: FireInputs | null = null;
-  if (isFire) {
-    if (metric === "liabilities") return { error: "A FIRE goal cannot track debt" };
+  if (isFireMode(targetMode)) {
+    if (metric === "liabilities") return { error: FIRE_DEBT_ERROR };
     const fireError = validateFireInputs(body.fireInputs, targetMode);
     if (fireError) return { error: fireError };
     const f = body.fireInputs as Record<string, number>;
