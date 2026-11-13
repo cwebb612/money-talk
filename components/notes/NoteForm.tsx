@@ -110,7 +110,7 @@ export default function NoteForm({
         }}
       />
 
-      <div className="grid grid-cols-1 desktop:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${accounts ? "desktop:grid-cols-2" : ""}`}>
         <div>
           <div className={fieldHeaderClass}>
             <label htmlFor={dateInputId} className="text-xs" style={{ color: "var(--color-muted)" }}>
