@@ -92,12 +92,13 @@ Docker images can also be published manually via **Actions → Publish to Docker
 
 ### Data model
 
-Five MongoDB collections via Mongoose (`lib/db/models/`):
+Six MongoDB collections via Mongoose (`lib/db/models/`):
 
 - **users** — multi-user; username + bcrypt passwordHash + `lastLoginAt`. All users are admins. First user seeded from `APP_USERNAME`/`APP_PASSWORD` env vars; subsequent users created via the Users page.
 - **accounts** — `type` enum: `cash | investment | liability`. Cash/liability have a `balance` field. Investment accounts have a `holdings[]` array of `{ticker, quantity, pricePerUnit}`. `currentValue` is derived and stored on every save. Shared across all users — no `userId` scoping.
 - **activity** — time-series log. One entry is written every time an account is created or reconciled (upserted per `{accountId, date}`). Used to build the net worth graph. Entries can also be edited or deleted directly via the activity log UI (`PATCH`/`DELETE /api/activity/entry/[activityId]`); editing or deleting an account's most-recent entry resyncs `Account.balance`/`holdings`/`currentValue` via `lib/utils/activitySync.ts`, and an account's last remaining entry can't be deleted. Shared across all users — no `userId` scoping.
 - **notes** — free-text notes: `body`, `date` (YYYY-MM-DD or `null`), optional `accountId`, `authorId`. A dated note shows as a marker on `NetWorthChart` (snapped to the last chart point on or before its date by `attachNotesToSeries` in `lib/utils/notes.ts`); an undated note shows only on `/notes`. Session-gated CRUD at `/api/notes` and `/api/notes/[id]`. Deleting an account unlinks its notes (`accountId` → `null`). Shared across all users — no `userId` scoping.
+- **goals** — financial goals: `title`, `notes`, `metric` (`netWorth | assets | investments | cash | liabilities | debtRatio | accounts` + `accountIds`; `debtRatio` is debt as a % of assets and allows only a fixed target), `direction` (`increase`, or `decrease` for debt — set by the server), `startValue`/`startDate` (snapshot at creation; reset when the metric or accounts change; a `contribution` goal can set a past `startDate` and its `startValue` comes from activity history), `targetMode` (`fixed | growing | contribution | fire | coastFire`; `contribution` = "Add amount": target is `startValue` ± `targetAmount`), `targetAmount`, `targetGrowthRate` (yearly %; inflation for FIRE modes), optional `targetDate`, `fireInputs`, `status` (`active | achieved | archived`), `achievedAt`, `showOnDashboard`, `priority` (order), `template` (the suggestion key that created it). Session-gated CRUD at `/api/goals`, `/api/goals/[id]`, and `PUT /api/goals/order`. Deleting an account pulls it from `accountIds`. Shared across all users — no `userId` scoping.
 - **apikeys** — API key records: `name`, `key` (plaintext), `prefix` (first 11 chars for display), `lastUsedAt`. Scoped to `userId`.
 
 ### Net worth graph
@@ -113,6 +114,7 @@ The activity log feature reads raw (non-aggregated) activity documents instead, 
 - `app/(app)/analytics/` — analytics page; `AnalyticsCard` (collapsible wrapper), `TrendsCard` (history chart + stats) live in `components/analytics/`; `GrowthCalculatorCard` (in `components/analytics/growth/`) is a future-value calculator: starting amount, years, return, contributions with a yearly increase, and a stacked chart. The pure math is in `lib/utils/projection.ts`; the shared `NumberField` (number input with optional slider) and `InfoTip` (tooltip) are in `components/ui/`
 - `app/(app)/activity/` — database-wide activity log page (all accounts, paginated, editable). `ActivityFiltersBar` filters by account and date range and sorts by date; `GET /api/activity` accepts `accountId`, `from` (YYYY-MM-DD) and `sort` (`newest` | `oldest`). Shared filter helpers (`DATE_RANGE_OPTIONS`, `rangeStartDate`, `todayString`) live in `lib/utils/filters.ts`; `FilterField`, `Select` and `ListCard` (list card with a summary / "Clear filters" header) in `components/ui/`; `useAccountOptions()` in `components/accounts/` loads the account list for filter and note dropdowns. The per-account equivalent is `AccountActivityCard` on the account detail page, not a separate route.
 - `app/(app)/notes/` — notes page: a feed of all notes (oldest at the top) with the composer at the bottom; the header has an "+ Add Note" button that scrolls to the composer. `NoteFiltersBar` filters by search text, account, date range and undated notes, and sorts oldest or newest first; the logic is the pure `filterNotes` in `lib/utils/notes.ts`. The date is what puts a note on the chart; the UI says "Date" / "No date" / "undated", never "on chart". Chart notes can also be added by a click on `NetWorthChart` (opens `ChartNotesDrawer`) or by the "Chart Note" field in the reconcile form. The account detail page shows that account's notes in `AccountNotesCard`.
+- `app/(app)/goals/` — goals page (server component → `GoalsClient`). One `GoalCard` per active goal (progress bar, stats, actual-vs-target `GoalChart`, up/down order, dashboard toggle, complete/archive/delete); `ClosedGoalsCard` lists achieved/archived goals. Suggested goals live in `SuggestionsDrawer` (opened by the "Suggestions" button, never shown unasked), grouped by `SUGGESTION_GROUPS`; a pick fills `GoalForm` in a `Modal` (`components/ui/Modal.tsx`). Complete, archive and delete live in the edit modal; the card shows "Mark complete" only once a goal is reached. The `millionaire` and `billionaire` templates get a special look from `components/goals/goalTheme.ts` (blue / `--color-red`). Card icon buttons use `HoverHint` (`components/ui/HoverHint.tsx`). The dashboard shows active goals with `showOnDashboard` in `GoalsSummaryCard` below the account list, in `priority` order; the card is hidden when none are selected.
 - `app/api-doc/` — Scalar API reference UI (public; path starts with `api` so proxy skips it); served as a route handler, not a page
 - `app/api/openapi.json/` — serves the OpenAPI spec as JSON; consumed by the Scalar UI
 - `app/api/v1/` — public REST API, gated by `X-API-Key` header
@@ -131,6 +133,7 @@ All colors are CSS variables defined in `app/globals.css`:
 - `--color-border` `#2c2c2e` — subtle borders and dividers
 - `--color-blue` `#3b82f6` — accent only (focus rings, highlights); not used as a background
 - `--color-yellow` `#f59e0b` — primary accent (CTAs, key values)
+- `--color-red` `#ef4444` — destructive actions and the billionaire goal theme
 - `--color-text` `#f5f5f7`, `--color-muted` `#6b7280`
 
 Use these variables for all new UI rather than hardcoding hex values.
@@ -143,6 +146,7 @@ Named breakpoints live in `app/globals.css` (`@theme`: `--breakpoint-tablet` 40r
 
 - `lib/utils/money.ts` — `calculateAccountValue(account)` (pure, no DB) and `formatUSD(value)`
 - `lib/utils/activitySync.ts` — `resyncAccountFromActivities(accountId)` recomputes an account's denormalized `balance`/`holdings`/`currentValue` from its latest remaining activity; called after an activity edit or delete
+- `lib/utils/goals.ts` — pure goal logic: `metricValue`, `targetAt` (fixed, growing, FIRE, Coast FIRE targets over time), `goalProgress`, `buildMetricSeries`, `projectCompletion`, `requiredMonthly`, `suggestGoals`, `validateGoalFields`. FIRE math is in `lib/utils/fire.ts`
 - `lib/auth/session.ts` — `signToken`, `verifyToken`, `setSessionCookie`, `clearSessionCookie`
 - `lib/auth/password.ts` — `hashPassword`, `comparePassword` (bcryptjs, saltRounds: 10)
 - `lib/auth/apiKey.ts` — `generateApiKey()`, `hashApiKey()`, `validateApiKey(request)` (SHA256-based)

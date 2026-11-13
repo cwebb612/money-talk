@@ -5,18 +5,22 @@ import { useRouter } from "next/navigation";
 import NetWorthCard from "./NetWorthCard";
 import AssetPieChart from "./AssetPieChart";
 import AccountBreakdown, { AccountDoc } from "./AccountBreakdown";
+import GoalsSummaryCard from "./GoalsSummaryCard";
 import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 import { DashboardGrid, GridModule } from "../ui/DashboardGrid";
 import { NoteDTO } from "../../lib/utils/notes";
+import { GoalDTO } from "../../lib/utils/goals";
 
 interface Props {
   accounts: AccountDoc[];
   activities: { accountId: string; date: string; value: number }[];
   notes: NoteDTO[];
+  goals: GoalDTO[];
+  today: string;
   updatedAt: string;
 }
 
-export default function DashboardClient({ accounts, activities, notes, updatedAt }: Props) {
+export default function DashboardClient({ accounts, activities, notes, goals, today, updatedAt }: Props) {
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(
     () => new Set(accounts.map((a) => a._id))
@@ -67,6 +71,11 @@ export default function DashboardClient({ accounts, activities, notes, updatedAt
       <GridModule span="full">
         <AccountBreakdown accounts={accounts} checked={checked} onToggle={toggle} />
       </GridModule>
+      {goals.length > 0 && (
+        <GridModule span="full">
+          <GoalsSummaryCard goals={goals} accounts={accounts} today={today} />
+        </GridModule>
+      )}
     </DashboardGrid>
   );
 }
