@@ -12,6 +12,13 @@ export type GoalMetric = (typeof GOAL_METRICS)[number];
 export const TARGET_MODES = ["fixed", "growing", "contribution", "fire", "coastFire"] as const;
 export type TargetMode = (typeof TARGET_MODES)[number];
 
+export const PICKABLE_TARGET_MODES = TARGET_MODES.filter((mode) => mode !== "coastFire");
+
+export const FIRE_TYPES = [
+  { value: "fire", label: "Full FIRE" },
+  { value: "coastFire", label: "Coast FIRE" },
+] as const;
+
 export const GOAL_STATUSES = ["active", "achieved", "archived"] as const;
 export type GoalStatus = (typeof GOAL_STATUSES)[number];
 
@@ -370,7 +377,7 @@ export function suggestGoals(
   netWorthHistory: DatedValue[],
   today: string
 ): GoalSuggestion[] {
-  const taken = new Set(goals.filter((g) => g.status === "active").map((g) => g.template));
+  const taken = new Set(goals.filter((g) => g.status === "active").map((g) => (g.template === "coastFire" ? "fire" : g.template)));
   const total = (metric: GoalMetric) => metricValue({ metric, accountIds: [] }, accounts);
   const netWorth = total("netWorth");
   const debt = total("liabilities");
@@ -460,14 +467,9 @@ export function suggestGoals(
     metric: "cash",
     targetAmount: cushion,
   });
-  add("Savings and retirement", "fire", "Reach FIRE", "Live on your investments: 25× your yearly spending.", {
+  add("Savings and retirement", "fire", "Reach FIRE", "Live on your investments: 25× your yearly spending. Full or Coast FIRE.", {
     metric: "investments",
     targetMode: "fire",
-    fireInputs: { ...DEFAULT_FIRE_INPUTS },
-  });
-  add("Savings and retirement", "coastFire", "Reach Coast FIRE", "Invest enough now that growth alone gets you to FIRE.", {
-    metric: "investments",
-    targetMode: "coastFire",
     fireInputs: { ...DEFAULT_FIRE_INPUTS },
   });
 
