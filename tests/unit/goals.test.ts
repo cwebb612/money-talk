@@ -14,6 +14,7 @@ import {
   suggestGoals,
   targetAt,
   targetModeDescription,
+  templateColor,
   validateGoalFields,
   valueOn,
 } from "../../lib/utils/goals";
@@ -226,7 +227,6 @@ describe("suggestGoals", () => {
       "addThisYear",
       "emergencyFund",
       "fire",
-      "coastFire",
     ]);
   });
 
@@ -234,6 +234,13 @@ describe("suggestGoals", () => {
     const payoff = suggestGoals(accounts, [], [], today).find((s) => s.key === "payoffAccount")!;
     expect(payoff.draft.metric).toBe("accounts");
     expect(payoff.draft.accountIds).toEqual([]);
+  });
+
+  it("gives the millionaire and billionaire suggestions their colors", () => {
+    const colors = Object.fromEntries(suggestGoals(accounts, [], [], today).map((s) => [s.key, s.draft.color]));
+    expect(colors.millionaire).toBe("blue");
+    expect(colors.billionaire).toBe("red");
+    expect(colors.fire).toBe("default");
   });
 
   it("suggests a positive net worth instead of a milestone when debt is more than assets", () => {
@@ -274,6 +281,10 @@ describe("suggestGoals", () => {
     ]);
     expect(keys).not.toContain("fire");
     expect(keys).toContain("milestone");
+  });
+
+  it("treats an older Coast FIRE goal as the FIRE suggestion", () => {
+    expect(keysFor(accounts, [{ template: "coastFire", status: "active" }])).not.toContain("fire");
   });
 });
 
@@ -363,6 +374,21 @@ describe("validateGoalFields", () => {
     });
   });
 
+  it("defaults the color and accepts each color option", () => {
+    const { color, ...noColor } = valid;
+    const result = validateGoalFields(noColor);
+    expect(color).toBe("default");
+    expect("fields" in result && result.fields.color).toBe("default");
+    for (const option of ["red", "blue", "green", "pink"]) {
+      const picked = validateGoalFields({ ...valid, color: option });
+      expect("fields" in picked && picked.fields.color).toBe(option);
+    }
+  });
+
+  it("rejects an unknown color", () => {
+    expect(validateGoalFields({ ...valid, color: "purple" })).toEqual({ error: "Invalid color" });
+  });
+
   it("rejects a FIRE goal that tracks debt", () => {
     expect(validateGoalFields({ ...valid, metric: "liabilities", targetMode: "fire", fireInputs: fire })).toEqual({
       error: "A FIRE goal cannot track debt",
@@ -380,5 +406,14 @@ describe("targetModeDescription", () => {
   it("says pay down for a debt goal that uses an amount", () => {
     expect(targetModeDescription("contribution", "increase")).toMatch(/^Add/);
     expect(targetModeDescription("contribution", "decrease")).toMatch(/^Pay down/);
+  });
+});
+
+describe("templateColor", () => {
+  it("keeps the colors of the special templates and defaults the rest", () => {
+    expect(templateColor("millionaire")).toBe("blue");
+    expect(templateColor("billionaire")).toBe("red");
+    expect(templateColor("fire")).toBe("default");
+    expect(templateColor(null)).toBe("default");
   });
 });

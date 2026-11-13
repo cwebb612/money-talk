@@ -9,10 +9,12 @@ import PillToggle from "../ui/PillToggle";
 import NumberField from "../ui/NumberField";
 import InfoTip from "../ui/InfoTip";
 import Popconfirm from "../ui/Popconfirm";
+import GoalColorPicker from "./GoalColorPicker";
 import { todayString } from "../../lib/utils/filters";
 import {
   DEFAULT_FIRE_INPUTS,
   EMERGENCY_FUND_MONTHS,
+  FIRE_TYPES,
   FireInputs,
   GOAL_METRICS,
   GOAL_NOTES_MAX_LENGTH,
@@ -21,7 +23,7 @@ import {
   GoalFields,
   GoalMetric,
   METRIC_LABELS,
-  TARGET_MODES,
+  PICKABLE_TARGET_MODES,
   TARGET_MODE_LABELS,
   TargetMode,
   formatGoalValue,
@@ -95,7 +97,8 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
   const today = todayString();
   const direction = goalDirection(fields, accounts);
   const percent = isPercentMetric(fields.metric);
-  const modes = TARGET_MODES.filter((mode) => !(direction === "decrease" && isFireMode(mode)));
+  const modes = PICKABLE_TARGET_MODES.filter((mode) => !(direction === "decrease" && isFireMode(mode)));
+  const pickedMode = fields.targetMode === "coastFire" ? "fire" : fields.targetMode;
   const fire = fields.fireInputs ?? DEFAULT_FIRE_INPUTS;
   const isEmergencyFund = fields.template === "emergencyFund" && fields.targetMode === "fixed";
   const targetToday = targetAt({ ...fields, fireInputs: fire, startDate: today, direction, startValue: 0 }, today);
@@ -115,6 +118,7 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
   }
 
   function setMode(mode: TargetMode) {
+    if (mode === pickedMode) return;
     set({ targetMode: mode, fireInputs: isFireMode(mode) ? fire : null, startDate: mode === "contribution" ? fields.startDate ?? today : null });
   }
 
@@ -193,7 +197,7 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
               </span>
               <PillToggle
                 ariaLabel="Target type"
-                value={fields.targetMode}
+                value={pickedMode}
                 options={modes.map((m) => ({ value: m, label: TARGET_MODE_LABELS[m] }))}
                 onChange={setMode}
               />
@@ -201,6 +205,23 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
             <p className="text-xs" style={mutedStyle}>
               {targetModeDescription(fields.targetMode, direction)}
             </p>
+          </div>
+        )}
+
+        {isFireMode(fields.targetMode) && (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="flex items-center gap-1.5 text-xs" style={mutedStyle}>
+              FIRE type
+              <InfoTip label="About FIRE types">
+                Full FIRE: invest enough to live on your investments now. Coast FIRE: invest enough that growth alone gets you to FIRE by your retirement age.
+              </InfoTip>
+            </span>
+            <PillToggle
+              ariaLabel="FIRE type"
+              value={fields.targetMode}
+              options={[...FIRE_TYPES]}
+              onChange={(mode) => set({ targetMode: mode })}
+            />
           </div>
         )}
 
@@ -292,6 +313,12 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
             onChange={(e) => set({ targetDate: e.target.value || null })}
           />
         </Field>
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <span className="text-xs" style={mutedStyle}>
+            Color
+          </span>
+          <GoalColorPicker value={fields.color} onChange={(color) => set({ color })} />
+        </div>
       </div>
 
       <Field label="Notes" htmlFor={notesId}>

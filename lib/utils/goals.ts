@@ -12,10 +12,29 @@ export type GoalMetric = (typeof GOAL_METRICS)[number];
 export const TARGET_MODES = ["fixed", "growing", "contribution", "fire", "coastFire"] as const;
 export type TargetMode = (typeof TARGET_MODES)[number];
 
+export const PICKABLE_TARGET_MODES = TARGET_MODES.filter((mode) => mode !== "coastFire");
+
+export const FIRE_TYPES = [
+  { value: "fire", label: "Full FIRE" },
+  { value: "coastFire", label: "Coast FIRE" },
+] as const;
+
 export const GOAL_STATUSES = ["active", "achieved", "archived"] as const;
 export type GoalStatus = (typeof GOAL_STATUSES)[number];
 
 export type GoalDirection = "increase" | "decrease";
+
+export const GOAL_COLORS = ["default", "red", "blue", "green", "pink"] as const;
+export type GoalColor = (typeof GOAL_COLORS)[number];
+
+const TEMPLATE_COLORS: Record<string, GoalColor> = {
+  millionaire: "blue",
+  billionaire: "red",
+};
+
+export function templateColor(template: string | null): GoalColor {
+  return (template && TEMPLATE_COLORS[template]) || "default";
+}
 
 export const METRIC_LABELS: Record<GoalMetric, string> = {
   netWorth: "Net worth",
@@ -76,6 +95,7 @@ export interface GoalFields {
   targetDate: string | null;
   fireInputs: FireInputs | null;
   showOnDashboard: boolean;
+  color: GoalColor;
   template: string | null;
   startDate: string | null;
 }
@@ -121,6 +141,7 @@ export function emptyGoalFields(): GoalFields {
     targetDate: null,
     fireInputs: null,
     showOnDashboard: true,
+    color: "default",
     template: null,
     startDate: null,
   };
@@ -138,6 +159,7 @@ export function goalFieldsOf(goal: GoalDTO): GoalFields {
     targetDate: goal.targetDate,
     fireInputs: goal.fireInputs,
     showOnDashboard: goal.showOnDashboard,
+    color: goal.color,
     template: goal.template,
     startDate: goal.startDate,
   };
@@ -372,7 +394,7 @@ export function suggestGoals(
   netWorthHistory: DatedValue[],
   today: string
 ): GoalSuggestion[] {
-  const taken = new Set(goals.filter((g) => g.status === "active").map((g) => g.template));
+  const taken = new Set(goals.filter((g) => g.status === "active").map((g) => (g.template === "coastFire" ? "fire" : g.template)));
   const total = (metric: GoalMetric) => metricValue({ metric, accountIds: [] }, accounts);
   const netWorth = total("netWorth");
   const debt = total("liabilities");
@@ -382,7 +404,7 @@ export function suggestGoals(
 
   function add(group: SuggestionGroup, key: string, title: string, description: string, fields: Partial<GoalFields>) {
     if (taken.has(key)) return;
-    suggestions.push({ key, group, title, description, draft: { ...emptyGoalFields(), title, template: key, ...fields } });
+    suggestions.push({ key, group, title, description, draft: { ...emptyGoalFields(), title, template: key, color: templateColor(key), ...fields } });
   }
 
   function changeSince(months: number): number | null {
@@ -462,14 +484,9 @@ export function suggestGoals(
     metric: "cash",
     targetAmount: cushion,
   });
-  add("Savings and retirement", "fire", "Reach FIRE", "Live on your investments: 25× your yearly spending.", {
+  add("Savings and retirement", "fire", "Reach FIRE", "Live on your investments: 25× your yearly spending. Full or Coast FIRE.", {
     metric: "investments",
     targetMode: "fire",
-    fireInputs: { ...DEFAULT_FIRE_INPUTS },
-  });
-  add("Savings and retirement", "coastFire", "Reach Coast FIRE", "Invest enough now that growth alone gets you to FIRE.", {
-    metric: "investments",
-    targetMode: "coastFire",
     fireInputs: { ...DEFAULT_FIRE_INPUTS },
   });
 
@@ -560,6 +577,9 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
   const template = body.template ?? null;
   if (template !== null && typeof template !== "string") return { error: "template must be a string" };
 
+  const color = body.color ?? defaults.color;
+  if (!GOAL_COLORS.includes(color as GoalColor)) return { error: "Invalid color" };
+
   const startDate = body.startDate ?? null;
   if (startDate !== null && !isDateString(startDate)) return { error: "startDate must be YYYY-MM-DD" };
 
@@ -575,6 +595,7 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
       targetDate,
       fireInputs,
       showOnDashboard,
+      color: color as GoalColor,
       template,
       startDate: targetMode === "contribution" ? startDate : null,
     },

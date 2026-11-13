@@ -14,6 +14,7 @@ import {
   isFireMode,
   metricValue,
   sortGoals,
+  templateColor,
   valueOn,
 } from "../utils/goals";
 
@@ -38,6 +39,7 @@ export function toGoalDTO(goal: GoalDoc): GoalDTO {
     achievedAt: goal.achievedAt ?? null,
     showOnDashboard: goal.showOnDashboard ?? true,
     priority: goal.priority ?? 0,
+    color: goal.color ?? templateColor(goal.template ?? null),
     template: goal.template ?? null,
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),

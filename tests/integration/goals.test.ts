@@ -133,6 +133,7 @@ test.describe("Goals", () => {
 
     await page.getByRole("button", { name: "Suggestions" }).click();
     await page.getByRole("button", { name: "Use Become a millionaire" }).click();
+    await expect(page.getByRole("group", { name: "Color" }).getByRole("button", { name: "Blue" })).toHaveAttribute("aria-pressed", "true");
     await page.getByLabel("Title").fill("E2E Millionaire");
     await page.getByRole("button", { name: "Add Goal" }).click();
     const millionaire = page.getByRole("article", { name: "E2E Millionaire" });
@@ -154,5 +155,33 @@ test.describe("Goals", () => {
       await dialog.getByRole("button", { name: "Delete", exact: true }).last().click();
       await expect(card).toHaveCount(0);
     }
+  });
+
+  test("shows FIRE as one target type with a Coast FIRE option", async ({ page }) => {
+    const title = `E2E FIRE ${Date.now()}`;
+
+    await page.goto("/goals");
+    await page.getByRole("button", { name: "+ New Goal" }).click();
+    const targetTypes = page.getByRole("group", { name: "Target type" });
+    await expect(targetTypes.getByRole("button", { name: "Coast FIRE" })).toHaveCount(0);
+
+    await page.getByLabel("Title").fill(title);
+    await page.getByLabel("Track").click();
+    await page.getByRole("option", { name: "Investments" }).click();
+    await targetTypes.getByRole("button", { name: "FIRE", exact: true }).click();
+    const fireTypes = page.getByRole("group", { name: "FIRE type" });
+    await expect(fireTypes.getByRole("button", { name: "Full FIRE" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("textbox", { name: "Retirement age", exact: true })).toHaveCount(0);
+
+    await fireTypes.getByRole("button", { name: "Coast FIRE" }).click();
+    await expect(page.getByRole("textbox", { name: "Retirement age", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Add Goal" }).click();
+
+    const card = page.getByRole("article", { name: title });
+    await expect(card.getByText("Coast FIRE")).toBeVisible();
+
+    await card.getByRole("button", { name: "Edit goal" }).click();
+    await expect(page.getByRole("group", { name: "Target type" }).getByRole("button", { name: "FIRE", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("group", { name: "FIRE type" }).getByRole("button", { name: "Coast FIRE" })).toHaveAttribute("aria-pressed", "true");
   });
 });
