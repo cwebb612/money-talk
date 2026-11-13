@@ -13,6 +13,7 @@ import {
   requiredMonthly,
   suggestGoals,
   targetAt,
+  targetModeDescription,
   templateColor,
   validateGoalFields,
   valueOn,
@@ -392,6 +393,19 @@ describe("validateGoalFields", () => {
     expect(validateGoalFields({ ...valid, metric: "liabilities", targetMode: "fire", fireInputs: fire })).toEqual({
       error: "A FIRE goal cannot track debt",
     });
+  });
+});
+
+describe("targetModeDescription", () => {
+  it("describes every target type", () => {
+    for (const mode of ["fixed", "growing", "contribution", "fire", "coastFire"] as const) {
+      expect(targetModeDescription(mode, "increase").length).toBeGreaterThan(0);
+    }
+  });
+
+  it("says pay down for a debt goal that uses an amount", () => {
+    expect(targetModeDescription("contribution", "increase")).toMatch(/^Add/);
+    expect(targetModeDescription("contribution", "decrease")).toMatch(/^Pay down/);
   });
 });
 
