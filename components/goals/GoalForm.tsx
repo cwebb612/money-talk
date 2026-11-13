@@ -9,6 +9,7 @@ import PillToggle from "../ui/PillToggle";
 import NumberField from "../ui/NumberField";
 import InfoTip from "../ui/InfoTip";
 import Popconfirm from "../ui/Popconfirm";
+import GoalColorPicker from "./GoalColorPicker";
 import { todayString } from "../../lib/utils/filters";
 import {
   DEFAULT_FIRE_INPUTS,
@@ -286,6 +287,12 @@ export default function GoalForm({ initial, accounts, submitLabel, onSubmit, onC
             onChange={(e) => set({ targetDate: e.target.value || null })}
           />
         </Field>
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <span className="text-xs" style={mutedStyle}>
+            Color
+          </span>
+          <GoalColorPicker value={fields.color} onChange={(color) => set({ color })} />
+        </div>
       </div>
 
       <Field label="Notes" htmlFor={notesId}>

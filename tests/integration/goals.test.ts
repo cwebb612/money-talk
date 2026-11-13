@@ -133,6 +133,7 @@ test.describe("Goals", () => {
 
     await page.getByRole("button", { name: "Suggestions" }).click();
     await page.getByRole("button", { name: "Use Become a millionaire" }).click();
+    await expect(page.getByRole("group", { name: "Color" }).getByRole("button", { name: "Blue" })).toHaveAttribute("aria-pressed", "true");
     await page.getByLabel("Title").fill("E2E Millionaire");
     await page.getByRole("button", { name: "Add Goal" }).click();
     const millionaire = page.getByRole("article", { name: "E2E Millionaire" });
@@ -154,5 +155,33 @@ test.describe("Goals", () => {
       await dialog.getByRole("button", { name: "Delete", exact: true }).last().click();
       await expect(card).toHaveCount(0);
     }
+  });
+
+  test("sets and changes the color of a goal", async ({ page }) => {
+    const title = `E2E Color ${Date.now()}`;
+    const colorOf = async () => {
+      const goals: { title: string; color: string }[] = await (await page.request.get("/api/goals")).json();
+      return goals.find((g) => g.title === title)?.color;
+    };
+
+    await page.goto("/goals");
+    await page.getByRole("button", { name: "+ New Goal" }).click();
+    const colors = page.getByRole("group", { name: "Color" });
+    await expect(colors.getByRole("button", { name: "Default" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByLabel("Title").fill(title);
+    await setAmount(page, "Target amount", "50000");
+    await colors.getByRole("button", { name: "Green" }).click();
+    await page.getByRole("button", { name: "Add Goal" }).click();
+
+    const card = page.getByRole("article", { name: title });
+    await expect(card).toBeVisible();
+    expect(await colorOf()).toBe("green");
+
+    await card.getByRole("button", { name: "Edit goal" }).click();
+    await expect(colors.getByRole("button", { name: "Green" })).toHaveAttribute("aria-pressed", "true");
+    await colors.getByRole("button", { name: "Pink" }).click();
+    await page.getByRole("button", { name: "Save Changes" }).click();
+    await expect(page.getByRole("dialog", { name: "Edit goal" })).toHaveCount(0);
+    expect(await colorOf()).toBe("pink");
   });
 });

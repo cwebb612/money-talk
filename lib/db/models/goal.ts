@@ -3,8 +3,10 @@ import {
   FireInputs,
   GOAL_METRICS,
   GOAL_NOTES_MAX_LENGTH,
+  GOAL_COLORS,
   GOAL_STATUSES,
   GOAL_TITLE_MAX_LENGTH,
+  GoalColor,
   GoalDirection,
   GoalMetric,
   GoalStatus,
@@ -29,6 +31,7 @@ export interface IGoal extends Document {
   achievedAt: string | null;
   showOnDashboard: boolean;
   priority: number;
+  color: GoalColor | null;
   template: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -63,6 +66,7 @@ const goalSchema = new Schema<IGoal>(
     achievedAt: { type: String, default: null },
     showOnDashboard: { type: Boolean, default: true },
     priority: { type: Number, default: 0 },
+    color: { type: String, enum: [...GOAL_COLORS, null], default: null },
     template: { type: String, default: null },
   },
   { timestamps: true }

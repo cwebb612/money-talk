@@ -1,7 +1,7 @@
 "use client";
 
 import Drawer from "../ui/Drawer";
-import { goalTheme } from "./goalTheme";
+import { goalAccent, goalBadge } from "./goalTheme";
 import { GoalSuggestion, SUGGESTION_GROUPS } from "../../lib/utils/goals";
 
 interface Props {
@@ -31,7 +31,8 @@ export default function SuggestionsDrawer({ open, suggestions, onClose, onPick }
               </h4>
               <ul>
                 {items.map((suggestion) => {
-                  const theme = goalTheme(suggestion.key);
+                  const accent = goalAccent(suggestion.draft.color);
+                  const badge = goalBadge(suggestion.key);
                   return (
                     <li
                       key={suggestion.key}
@@ -39,8 +40,8 @@ export default function SuggestionsDrawer({ open, suggestions, onClose, onPick }
                       style={{ borderBottom: "1px solid var(--color-border)" }}
                     >
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme?.color ?? "var(--color-text)" }}>
-                          {theme && <theme.Icon size={14} />}
+                        <p className="flex items-center gap-1.5 text-sm font-medium" style={{ color: accent ?? "var(--color-text)" }}>
+                          {badge && <badge.Icon size={14} />}
                           {suggestion.title}
                         </p>
                         <p className="text-xs" style={{ color: "var(--color-muted)" }}>
@@ -52,7 +53,7 @@ export default function SuggestionsDrawer({ open, suggestions, onClose, onPick }
                         onClick={() => onPick(suggestion)}
                         aria-label={`Use ${suggestion.title}`}
                         className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg text-black"
-                        style={{ backgroundColor: theme?.color ?? "var(--color-yellow)" }}
+                        style={{ backgroundColor: accent ?? "var(--color-yellow)" }}
                       >
                         Add
                       </button>

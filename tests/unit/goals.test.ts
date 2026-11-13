@@ -13,6 +13,7 @@ import {
   requiredMonthly,
   suggestGoals,
   targetAt,
+  templateColor,
   validateGoalFields,
   valueOn,
 } from "../../lib/utils/goals";
@@ -235,6 +236,13 @@ describe("suggestGoals", () => {
     expect(payoff.draft.accountIds).toEqual([]);
   });
 
+  it("gives the millionaire and billionaire suggestions their colors", () => {
+    const colors = Object.fromEntries(suggestGoals(accounts, [], [], today).map((s) => [s.key, s.draft.color]));
+    expect(colors.millionaire).toBe("blue");
+    expect(colors.billionaire).toBe("red");
+    expect(colors.fire).toBe("default");
+  });
+
   it("suggests a positive net worth instead of a milestone when debt is more than assets", () => {
     const keys = keysFor([{ _id: "loan", type: "liability", currentValue: 5000 }]);
     expect(keys).toContain("positiveNetWorth");
@@ -362,9 +370,33 @@ describe("validateGoalFields", () => {
     });
   });
 
+  it("defaults the color and accepts each color option", () => {
+    const { color, ...noColor } = valid;
+    const result = validateGoalFields(noColor);
+    expect(color).toBe("default");
+    expect("fields" in result && result.fields.color).toBe("default");
+    for (const option of ["red", "blue", "green", "pink"]) {
+      const picked = validateGoalFields({ ...valid, color: option });
+      expect("fields" in picked && picked.fields.color).toBe(option);
+    }
+  });
+
+  it("rejects an unknown color", () => {
+    expect(validateGoalFields({ ...valid, color: "purple" })).toEqual({ error: "Invalid color" });
+  });
+
   it("rejects a FIRE goal that tracks debt", () => {
     expect(validateGoalFields({ ...valid, metric: "liabilities", targetMode: "fire", fireInputs: fire })).toEqual({
       error: "A FIRE goal cannot track debt",
     });
+  });
+});
+
+describe("templateColor", () => {
+  it("keeps the colors of the special templates and defaults the rest", () => {
+    expect(templateColor("millionaire")).toBe("blue");
+    expect(templateColor("billionaire")).toBe("red");
+    expect(templateColor("fire")).toBe("default");
+    expect(templateColor(null)).toBe("default");
   });
 });
