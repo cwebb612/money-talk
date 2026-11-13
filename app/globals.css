@@ -20,6 +20,11 @@
   --color-muted: #be185d;
 }
 
+@theme {
+  --breakpoint-tablet: 40rem;
+  --breakpoint-desktop: 64rem;
+}
+
 @theme inline {
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text);

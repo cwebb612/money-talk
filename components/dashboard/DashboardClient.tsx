@@ -1,19 +1,23 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import NetWorthCard from "./NetWorthCard";
 import AssetPieChart from "./AssetPieChart";
 import AccountBreakdown, { AccountDoc } from "./AccountBreakdown";
 import { buildNetWorthSeries } from "../../lib/utils/netWorth";
 import { DashboardGrid, GridModule } from "../ui/DashboardGrid";
+import { NoteDTO } from "../../lib/utils/notes";
 
 interface Props {
   accounts: AccountDoc[];
   activities: { accountId: string; date: string; value: number }[];
+  notes: NoteDTO[];
   updatedAt: string;
 }
 
-export default function DashboardClient({ accounts, activities, updatedAt }: Props) {
+export default function DashboardClient({ accounts, activities, notes, updatedAt }: Props) {
+  const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(
     () => new Set(accounts.map((a) => a._id))
   );
@@ -46,7 +50,13 @@ export default function DashboardClient({ accounts, activities, updatedAt }: Pro
   return (
     <DashboardGrid>
       <GridModule span={hasPieData ? "main" : "full"} stretch>
-        <NetWorthCard value={netWorth} updatedAt={updatedAt} chartData={chartData} />
+        <NetWorthCard
+          value={netWorth}
+          updatedAt={updatedAt}
+          chartData={chartData}
+          notes={notes}
+          onNotesChanged={() => router.refresh()}
+        />
       </GridModule>
       {hasPieData && (
         <GridModule span="side" stretch>
