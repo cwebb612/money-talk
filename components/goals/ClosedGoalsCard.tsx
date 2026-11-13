@@ -9,6 +9,8 @@ import { formatTooltipDate } from "../analytics/chartFormat";
 import { dateToTimestamp } from "../../lib/utils/monthWindow";
 import { GoalDTO } from "../../lib/utils/goals";
 
+const ROW_BUTTON_CLASS = "flex items-center justify-center min-w-[4.5rem] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors";
+
 interface Props {
   goals: GoalDTO[];
   onChanged: () => void;
@@ -65,8 +67,8 @@ export default function ClosedGoalsCard({ goals, onChanged }: Props) {
                 <button
                   type="button"
                   onClick={() => run(() => updateGoal(goal._id, { status: "active" }))}
-                  className="text-xs font-medium"
-                  style={{ color: "var(--color-yellow)" }}
+                  className={ROW_BUTTON_CLASS}
+                  style={{ border: "1px solid var(--color-border)", color: "var(--color-yellow)" }}
                 >
                   Reopen
                 </button>
@@ -74,7 +76,11 @@ export default function ClosedGoalsCard({ goals, onChanged }: Props) {
                   title="Delete this goal?"
                   onConfirm={() => run(() => deleteGoal(goal._id))}
                 >
-                  <button type="button" className="text-xs font-medium" style={{ color: "var(--color-red)" }}>
+                  <button
+                    type="button"
+                    className={`${ROW_BUTTON_CLASS} hover:bg-red-500/10`}
+                    style={{ border: "1px solid var(--color-red)", color: "var(--color-red)" }}
+                  >
                     Delete
                   </button>
                 </Popconfirm>
