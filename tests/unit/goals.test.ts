@@ -225,7 +225,6 @@ describe("suggestGoals", () => {
       "addThisYear",
       "emergencyFund",
       "fire",
-      "coastFire",
     ]);
   });
 
@@ -273,6 +272,10 @@ describe("suggestGoals", () => {
     ]);
     expect(keys).not.toContain("fire");
     expect(keys).toContain("milestone");
+  });
+
+  it("treats an older Coast FIRE goal as the FIRE suggestion", () => {
+    expect(keysFor(accounts, [{ template: "coastFire", status: "active" }])).not.toContain("fire");
   });
 });
 
