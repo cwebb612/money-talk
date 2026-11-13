@@ -133,6 +133,7 @@ test.describe("Goals", () => {
 
     await page.getByRole("button", { name: "Suggestions" }).click();
     await page.getByRole("button", { name: "Use Become a millionaire" }).click();
+    await expect(page.getByRole("group", { name: "Color" }).getByRole("button", { name: "Blue" })).toHaveAttribute("aria-pressed", "true");
     await page.getByLabel("Title").fill("E2E Millionaire");
     await page.getByRole("button", { name: "Add Goal" }).click();
     const millionaire = page.getByRole("article", { name: "E2E Millionaire" });

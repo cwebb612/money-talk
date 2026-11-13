@@ -24,6 +24,18 @@ export type GoalStatus = (typeof GOAL_STATUSES)[number];
 
 export type GoalDirection = "increase" | "decrease";
 
+export const GOAL_COLORS = ["default", "red", "blue", "green", "pink"] as const;
+export type GoalColor = (typeof GOAL_COLORS)[number];
+
+const TEMPLATE_COLORS: Record<string, GoalColor> = {
+  millionaire: "blue",
+  billionaire: "red",
+};
+
+export function templateColor(template: string | null): GoalColor {
+  return (template && TEMPLATE_COLORS[template]) || "default";
+}
+
 export const METRIC_LABELS: Record<GoalMetric, string> = {
   netWorth: "Net worth",
   assets: "Total assets",
@@ -66,6 +78,7 @@ export interface GoalFields {
   targetDate: string | null;
   fireInputs: FireInputs | null;
   showOnDashboard: boolean;
+  color: GoalColor;
   template: string | null;
   startDate: string | null;
 }
@@ -111,6 +124,7 @@ export function emptyGoalFields(): GoalFields {
     targetDate: null,
     fireInputs: null,
     showOnDashboard: true,
+    color: "default",
     template: null,
     startDate: null,
   };
@@ -128,6 +142,7 @@ export function goalFieldsOf(goal: GoalDTO): GoalFields {
     targetDate: goal.targetDate,
     fireInputs: goal.fireInputs,
     showOnDashboard: goal.showOnDashboard,
+    color: goal.color,
     template: goal.template,
     startDate: goal.startDate,
   };
@@ -372,7 +387,7 @@ export function suggestGoals(
 
   function add(group: SuggestionGroup, key: string, title: string, description: string, fields: Partial<GoalFields>) {
     if (taken.has(key)) return;
-    suggestions.push({ key, group, title, description, draft: { ...emptyGoalFields(), title, template: key, ...fields } });
+    suggestions.push({ key, group, title, description, draft: { ...emptyGoalFields(), title, template: key, color: templateColor(key), ...fields } });
   }
 
   function changeSince(months: number): number | null {
@@ -545,6 +560,9 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
   const template = body.template ?? null;
   if (template !== null && typeof template !== "string") return { error: "template must be a string" };
 
+  const color = body.color ?? defaults.color;
+  if (!GOAL_COLORS.includes(color as GoalColor)) return { error: "Invalid color" };
+
   const startDate = body.startDate ?? null;
   if (startDate !== null && !isDateString(startDate)) return { error: "startDate must be YYYY-MM-DD" };
 
@@ -560,6 +578,7 @@ export function validateGoalFields(input: unknown): { fields: GoalFields } | { e
       targetDate,
       fireInputs,
       showOnDashboard,
+      color: color as GoalColor,
       template,
       startDate: targetMode === "contribution" ? startDate : null,
     },

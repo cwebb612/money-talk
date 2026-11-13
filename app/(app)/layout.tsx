@@ -96,21 +96,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <Link
-            href="/activity"
-            className="flex items-center justify-center rounded-full"
-            style={{
-              width: 32,
-              height: 32,
-              border: "1px solid var(--color-border)",
-              backgroundColor: pathname === "/activity" ? "var(--color-border)" : "transparent",
-              color: pathname === "/activity" ? "var(--color-yellow)" : "var(--color-muted)",
-            }}
-            aria-label="Activity Log"
-          >
-            <History size={16} />
-          </Link>
-
-          <Link
             href="/notes"
             className="flex items-center justify-center rounded-full"
             style={{
@@ -123,6 +108,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             aria-label="Notes"
           >
             <NotebookPen size={16} />
+          </Link>
+
+          <Link
+            href="/activity"
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 32,
+              height: 32,
+              border: "1px solid var(--color-border)",
+              backgroundColor: pathname === "/activity" ? "var(--color-border)" : "transparent",
+              color: pathname === "/activity" ? "var(--color-yellow)" : "var(--color-muted)",
+            }}
+            aria-label="Activity Log"
+          >
+            <History size={16} />
           </Link>
 
           <div ref={menuRef} style={{ position: "relative" }}>
