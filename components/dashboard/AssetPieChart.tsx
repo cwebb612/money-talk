@@ -29,7 +29,9 @@ export default function AssetPieChart({ accounts }: Props) {
   if (assets.length === 0) return null;
 
   const total = assets.reduce((sum, a) => sum + a.currentValue, 0);
-  const data = assets.map((a) => ({ name: a.name, value: a.currentValue }));
+  const data = assets
+    .map((a) => ({ name: a.name, value: a.currentValue }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: "var(--color-card)" }}>
