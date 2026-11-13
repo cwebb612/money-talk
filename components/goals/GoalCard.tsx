@@ -7,7 +7,7 @@ import HoverHint from "../ui/HoverHint";
 import GoalProgressBar from "./GoalProgressBar";
 import GoalChart, { goalChartPoints } from "./GoalChart";
 import { updateGoal } from "./goalApi";
-import { goalTheme, themedCardStyle } from "./goalTheme";
+import { goalAccent, goalBadge, themedCardStyle } from "./goalTheme";
 import { GAIN_COLOR, LOSS_COLOR, formatMonthYear, formatTooltipDate } from "../analytics/chartFormat";
 import { formatWholeUSD } from "../../lib/utils/money";
 import { dateToTimestamp } from "../../lib/utils/monthWindow";
@@ -108,7 +108,8 @@ function modeSummary(goal: GoalDTO): string | null {
 export default function GoalCard(props: Props) {
   const { goal, accounts, activities, accountTypes, today, canMoveUp, canMoveDown, onMove, onEdit, onChanged } = props;
   const [error, setError] = useState("");
-  const theme = goalTheme(goal.template);
+  const accent = goalAccent(goal.color);
+  const badge = goalBadge(goal.template);
 
   const history = useMemo(() => buildMetricSeries(goal, activities, accountTypes), [goal, activities, accountTypes]);
   const chartData = useMemo(() => goalChartPoints(goal, history, today), [goal, history, today]);
@@ -133,12 +134,12 @@ export default function GoalCard(props: Props) {
   const meta = [METRIC_LABELS[goal.metric], modeSummary(goal)].filter(Boolean).join(" · ");
 
   return (
-    <Card style={themedCardStyle(theme)}>
+    <Card style={themedCardStyle(accent)}>
       <article id={`goal-${goal._id}`} aria-label={goal.title} className="flex flex-col gap-4" style={{ scrollMarginTop: 24 }}>
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              {theme && <theme.Icon size={18} style={{ color: theme.color }} aria-label={theme.label} />}
+              {badge && <badge.Icon size={18} style={{ color: accent ?? "var(--color-yellow)" }} aria-label={badge.label} />}
               <h2 className="text-lg font-semibold" style={{ color: "var(--color-text)" }}>
                 {goal.title}
               </h2>
@@ -192,7 +193,7 @@ export default function GoalCard(props: Props) {
         <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
             <p className="tabular-nums">
-              <span className="text-2xl font-bold" style={{ color: theme?.color ?? "var(--color-yellow)" }}>
+              <span className="text-2xl font-bold" style={{ color: accent ?? "var(--color-yellow)" }}>
                 {format(progress.current)}
               </span>
               <span className="text-sm" style={{ color: "var(--color-muted)" }}>
@@ -203,7 +204,7 @@ export default function GoalCard(props: Props) {
               {Math.floor(progress.percent)}%
             </span>
           </div>
-          <GoalProgressBar percent={progress.percent} label={`${goal.title} progress`} markers accent={theme?.color} />
+          <GoalProgressBar percent={progress.percent} label={`${goal.title} progress`} markers accent={accent ?? undefined} />
         </div>
 
         <dl className="grid grid-cols-2 tablet:grid-cols-4 gap-3">
@@ -223,7 +224,7 @@ export default function GoalCard(props: Props) {
           {needed !== null && <Stat label="Needed per month" value={formatWholeUSD(needed)} color="var(--color-yellow)" />}
         </dl>
 
-        <GoalChart data={chartData} metric={goal.metric} accent={theme?.color} />
+        <GoalChart data={chartData} metric={goal.metric} accent={accent ?? undefined} />
 
         {goal.notes && (
           <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--color-muted)" }}>

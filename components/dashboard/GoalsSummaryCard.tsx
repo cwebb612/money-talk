@@ -1,7 +1,7 @@
 import Link from "next/link";
 import GoalProgressBar from "../goals/GoalProgressBar";
 import { GAIN_COLOR } from "../analytics/chartFormat";
-import { goalTheme, themedCardStyle } from "../goals/goalTheme";
+import { goalAccent, goalBadge, themedCardStyle } from "../goals/goalTheme";
 import { GoalAccount, GoalDTO, formatGoalValue, goalProgress, metricValue } from "../../lib/utils/goals";
 
 interface Props {
@@ -24,24 +24,25 @@ export default function GoalsSummaryCard({ goals, accounts, today }: Props) {
       <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-2">
         {goals.map((goal) => {
           const progress = goalProgress(goal, metricValue(goal, accounts), today);
-          const theme = goalTheme(goal.template);
+          const accent = goalAccent(goal.color);
+          const badge = goalBadge(goal.template);
           return (
             <Link
               key={goal._id}
               href={`/goals#goal-${goal._id}`}
               className="rounded-xl p-4 flex flex-col gap-2"
-              style={{ backgroundColor: "var(--color-card)", ...themedCardStyle(theme) }}
+              style={{ backgroundColor: "var(--color-card)", ...themedCardStyle(accent) }}
             >
               <div className="flex items-baseline justify-between gap-3">
                 <span className="flex items-center gap-1.5 text-sm font-medium truncate" style={{ color: "var(--color-text)" }}>
-                  {theme && <theme.Icon size={14} className="shrink-0" style={{ color: theme.color }} />}
+                  {badge && <badge.Icon size={14} className="shrink-0" style={{ color: accent ?? "var(--color-yellow)" }} />}
                   {goal.title}
                 </span>
                 <span className="text-sm font-semibold tabular-nums shrink-0" style={{ color: "var(--color-text)" }}>
                   {Math.floor(progress.percent)}%
                 </span>
               </div>
-              <GoalProgressBar percent={progress.percent} label={`${goal.title} progress`} height={6} accent={theme?.color} />
+              <GoalProgressBar percent={progress.percent} label={`${goal.title} progress`} height={6} accent={accent ?? undefined} />
               <span className="text-xs tabular-nums" style={{ color: progress.reached ? GAIN_COLOR : "var(--color-muted)" }}>
                 {progress.reached ? "Reached" : `${formatGoalValue(goal.metric, progress.remaining)} to go`}
               </span>

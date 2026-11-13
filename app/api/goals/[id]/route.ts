@@ -27,6 +27,7 @@ const EDITABLE_KEYS: (keyof GoalFields)[] = [
   "targetDate",
   "fireInputs",
   "showOnDashboard",
+  "color",
   "startDate",
 ];
 
