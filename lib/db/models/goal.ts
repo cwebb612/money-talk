@@ -1,4 +1,5 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { Schema, Document, Model, Types } from "mongoose";
+import { defineModel } from "../defineModel";
 import {
   FireInputs,
   GOAL_METRICS,
@@ -74,6 +75,6 @@ const goalSchema = new Schema<IGoal>(
 
 goalSchema.index({ status: 1, priority: 1 });
 
-const Goal: Model<IGoal> = mongoose.models.Goal || mongoose.model<IGoal>("Goal", goalSchema);
+const Goal: Model<IGoal> = defineModel<IGoal>("Goal", goalSchema);
 
 export default Goal;
