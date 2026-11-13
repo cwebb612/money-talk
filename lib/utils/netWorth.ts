@@ -1,48 +1,48 @@
+export type ActivityRecord = { date: string; accountId: { toString(): string }; value: number };
+
 /**
- * Aggregates activity records into a daily net-worth time series.
+ * Walks activity records day by day, carrying each account's latest value forward.
  *
  * Algorithm:
  *   1. Group activities by date, keeping the last recorded value per account per day.
  *   2. Walk days ascending, carrying each account's latest known value forward so
  *      accounts without a new entry on a given day retain their previous value.
- *   3. Each day: sum all account values, subtracting liabilities.
+ *   3. Each day: pass the latest values to `toPoint`; a `null` result skips the day.
  *
  * Callers are responsible for fetching activities with whatever filters they need
- * (auth, date range, etc.) and building the accountTypes map before calling this.
+ * (auth, date range, etc.) before calling this.
  *
- * @param activities   Activity records, sorted ascending by recordedAt / date.
- * @param accountTypes Map of accountId string → account type string.
+ * @param activities Activity records, sorted ascending by recordedAt / date.
+ * @param toPoint    Builds the series point for one day from each account's latest value.
  */
+export function mapDailyLatest<T>(
+  activities: ActivityRecord[],
+  toPoint: (date: string, latestValues: Map<string, number>) => T | null
+): T[] {
+  const dayMap = new Map<string, Map<string, number>>();
+  for (const activity of activities) {
+    if (!dayMap.has(activity.date)) dayMap.set(activity.date, new Map());
+    dayMap.get(activity.date)!.set(activity.accountId.toString(), activity.value);
+  }
+
+  const latestValues = new Map<string, number>();
+  const series: T[] = [];
+  for (const day of [...dayMap.keys()].sort()) {
+    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
+    const point = toPoint(day, latestValues);
+    if (point !== null) series.push(point);
+  }
+  return series;
+}
+
 export function buildNetWorthSeries(
-  activities: Array<{ date: string; accountId: { toString(): string }; value: number }>,
+  activities: ActivityRecord[],
   accountTypes: Map<string, string>
 ): { date: string; value: number }[] {
-  const dayMap = new Map<string, Map<string, number>>();
-
-  for (const activity of activities) {
-    const day = activity.date;
-    if (!dayMap.has(day)) dayMap.set(day, new Map());
-    dayMap.get(day)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  const allDays = [...dayMap.keys()].sort();
-  const latestValues = new Map<string, number>();
-  const series: { date: string; value: number }[] = [];
-
-  for (const day of allDays) {
-    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
-
-    let netWorth = 0;
-    latestValues.forEach((value, accountId) => {
-      const type = accountTypes.get(accountId);
-      if (type === "liability") netWorth -= value;
-      else if (type != null) netWorth += value;
-    });
-
-    series.push({ date: day, value: netWorth });
-  }
-
-  return series;
+  return mapDailyLatest(activities, (date, latestValues) => {
+    const { assets, liabilities } = splitByType(latestValues, accountTypes);
+    return { date, value: assets - liabilities };
+  });
 }
 
 export interface AssetLiabilityPoint {
@@ -53,34 +53,21 @@ export interface AssetLiabilityPoint {
 
 // Same carry-forward walk as buildNetWorthSeries, keeping assets and liabilities apart.
 export function buildAssetLiabilitySeries(
-  activities: Array<{ date: string; accountId: { toString(): string }; value: number }>,
+  activities: ActivityRecord[],
   accountTypes: Map<string, string>
 ): AssetLiabilityPoint[] {
-  const dayMap = new Map<string, Map<string, number>>();
+  return mapDailyLatest(activities, (date, latestValues) => ({ date, ...splitByType(latestValues, accountTypes) }));
+}
 
-  for (const activity of activities) {
-    if (!dayMap.has(activity.date)) dayMap.set(activity.date, new Map());
-    dayMap.get(activity.date)!.set(activity.accountId.toString(), activity.value);
-  }
-
-  const latestValues = new Map<string, number>();
-  const series: AssetLiabilityPoint[] = [];
-
-  for (const day of [...dayMap.keys()].sort()) {
-    dayMap.get(day)!.forEach((value, accountId) => latestValues.set(accountId, value));
-
-    let assets = 0;
-    let liabilities = 0;
-    latestValues.forEach((value, accountId) => {
-      const type = accountTypes.get(accountId);
-      if (type === "liability") liabilities += value;
-      else if (type != null) assets += value;
-    });
-
-    series.push({ date: day, assets, liabilities });
-  }
-
-  return series;
+function splitByType(latestValues: Map<string, number>, accountTypes: Map<string, string>) {
+  let assets = 0;
+  let liabilities = 0;
+  latestValues.forEach((value, accountId) => {
+    const type = accountTypes.get(accountId);
+    if (type === "liability") liabilities += value;
+    else if (type != null) assets += value;
+  });
+  return { assets, liabilities };
 }
 
 export interface AccountTotals {

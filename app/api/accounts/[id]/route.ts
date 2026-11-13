@@ -5,6 +5,7 @@ import connect from "../../../../lib/db/mongodb";
 import Account from "../../../../lib/db/models/account";
 import Activity from "../../../../lib/db/models/activity";
 import Note from "../../../../lib/db/models/note";
+import Goal from "../../../../lib/db/models/goal";
 import { calculateAccountValue } from "../../../../lib/utils/money";
 import { Types } from "mongoose";
 
@@ -103,5 +104,6 @@ export async function DELETE(
 
   await account.deleteOne();
   await Note.updateMany({ accountId: account._id }, { accountId: null });
+  await Goal.updateMany({ accountIds: account._id }, { $pull: { accountIds: account._id } });
   return NextResponse.json({ ok: true });
 }
