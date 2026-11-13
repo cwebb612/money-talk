@@ -33,3 +33,20 @@ export function formatMonthTick(ts: number, index: number): string {
 export function formatTooltipDate(ts: unknown): string {
   return new Date(ts as number).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
+
+export function formatWholeUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+}
+
+export function formatCompactUSD(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatMonthYear(ts: number): string {
+  return new Date(ts).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}

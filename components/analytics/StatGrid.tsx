@@ -5,12 +5,18 @@ export interface Stat {
   color: string;
 }
 
-export default function StatGrid({ stats }: { stats: Stat[] }) {
+interface Props {
+  stats: Stat[];
+  minColumnWidth?: number;
+}
+
+export default function StatGrid({ stats, minColumnWidth }: Props) {
+  const columns = minColumnWidth
+    ? `repeat(auto-fit, minmax(${minColumnWidth}px, 1fr))`
+    : `repeat(${stats.length}, 1fr)`;
+
   return (
-    <div
-      className="mt-4"
-      style={{ display: "grid", gridTemplateColumns: `repeat(${stats.length}, 1fr)`, gap: 12 }}
-    >
+    <div className="mt-4" style={{ display: "grid", gridTemplateColumns: columns, gap: 12 }}>
       {stats.map(({ label, value, sub, color }) => (
         <div key={label} className="rounded-lg p-4" style={{ backgroundColor: "var(--color-border)" }}>
           <div className="text-xs mb-2" style={{ color: "var(--color-muted)" }}>{label}</div>
