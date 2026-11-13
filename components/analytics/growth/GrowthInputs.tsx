@@ -1,13 +1,17 @@
 "use client";
 
+import { ReactNode } from "react";
 import PillToggle from "../../ui/PillToggle";
-import NumberField from "./NumberField";
-import InfoTip from "./InfoTip";
-import { GAIN_COLOR, LOSS_COLOR, formatWholeUSD } from "../chartFormat";
-import { GrowthSettings, MAX_YEARS, START_SOURCE_LABELS, StartSource, StartingTotals, startingAmount } from "./settings";
+import NumberField from "../../ui/NumberField";
+import InfoTip from "../../ui/InfoTip";
+import { GAIN_COLOR, LOSS_COLOR } from "../chartFormat";
+import { formatWholeUSD } from "../../../lib/utils/money";
+import { AccountTotals } from "../../../lib/utils/netWorth";
+import { GrowthSettings, MAX_YEARS, START_SOURCE_LABELS } from "./settings";
+
+const LOSING_VALUE = { label: "Losing value", color: LOSS_COLOR };
 
 const RETURN_LEVELS = [
-  { upTo: -0.01, label: "Losing value", color: LOSS_COLOR },
   { upTo: 0, label: "No growth", color: "var(--color-muted)" },
   { upTo: 2, label: "Very conservative", color: "var(--color-muted)" },
   { upTo: 4, label: "Conservative", color: "var(--color-text)" },
@@ -18,24 +22,40 @@ const RETURN_LEVELS = [
   { upTo: Infinity, label: "Speculative", color: LOSS_COLOR },
 ];
 
+const SOURCE_OPTIONS = [
+  { value: "netWorth", label: START_SOURCE_LABELS.netWorth },
+  { value: "investments", label: START_SOURCE_LABELS.investments },
+  { value: "cash", label: START_SOURCE_LABELS.cash },
+  { value: "custom", label: "Custom" },
+] as const;
+
 function describeReturn(rate: number) {
-  return RETURN_LEVELS.find((level) => rate <= level.upTo) ?? RETURN_LEVELS[RETURN_LEVELS.length - 1];
+  if (rate < 0) return LOSING_VALUE;
+  return RETURN_LEVELS.find((level) => rate <= level.upTo)!;
 }
 
-const SOURCE_OPTIONS = [
-  ...(Object.keys(START_SOURCE_LABELS) as StartSource[]).map((value) => ({ value, label: START_SOURCE_LABELS[value] })),
-  { value: "custom" as const, label: "Custom" },
-];
+function LinkButton({ onClick, className, title, children }: {
+  onClick: () => void;
+  className: string;
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick} title={title} className={`text-xs underline ${className}`} style={{ color: "var(--color-yellow)" }}>
+      {children}
+    </button>
+  );
+}
 
 interface Props {
   settings: GrowthSettings;
-  totals: StartingTotals;
+  start: number;
+  totals: AccountTotals;
   averageMonthly: number;
   onChange: (patch: Partial<GrowthSettings>) => void;
 }
 
-export default function GrowthInputs({ settings, totals, averageMonthly, onChange }: Props) {
-  const start = startingAmount(settings, totals);
+export default function GrowthInputs({ settings, start, totals, averageMonthly, onChange }: Props) {
   const returnLevel = describeReturn(settings.annualReturn);
   const sourceValue = settings.startOverride === null ? settings.startSource : "custom";
 
@@ -45,33 +65,26 @@ export default function GrowthInputs({ settings, totals, averageMonthly, onChang
         <PillToggle
           ariaLabel="Starting amount source"
           value={sourceValue}
-          options={SOURCE_OPTIONS}
+          options={[...SOURCE_OPTIONS]}
           onChange={(value) =>
             onChange(value === "custom" ? { startOverride: start } : { startSource: value, startOverride: null })
           }
         />
         <NumberField inline integer label="Starting amount" prefix="$" value={start} onChange={(value) => onChange({ startOverride: value })} />
         {settings.startOverride !== null && (
-          <button
-            type="button"
-            onClick={() => onChange({ startOverride: null })}
-            className="self-end text-xs underline"
-            style={{ color: "var(--color-yellow)" }}
-          >
+          <LinkButton className="self-end" onClick={() => onChange({ startOverride: null })}>
             Reset to actual {START_SOURCE_LABELS[settings.startSource].toLowerCase()} ({formatWholeUSD(totals[settings.startSource])})
-          </button>
+          </LinkButton>
         )}
       </div>
 
       <NumberField
         inline
-        label="Years"
         integer
-        min={1}
-        max={MAX_YEARS}
+        label="Years"
         slider={{ min: 1, max: MAX_YEARS, step: 1 }}
         value={settings.years}
-        onChange={(value) => onChange({ years: value })}
+        onChange={(years) => onChange({ years })}
       />
 
       <div className="flex flex-col gap-2">
@@ -83,11 +96,11 @@ export default function GrowthInputs({ settings, totals, averageMonthly, onChang
           max={50}
           slider={{ min: 0, max: 20, step: 0.5 }}
           value={settings.annualReturn}
-          onChange={(value) => onChange({ annualReturn: value })}
+          onChange={(annualReturn) => onChange({ annualReturn })}
         />
-        <div className="text-xs" aria-live="polite">
-          <span className="font-semibold" style={{ color: returnLevel.color }}>{returnLevel.label}</span>
-        </div>
+        <span className="text-xs font-semibold" aria-live="polite" style={{ color: returnLevel.color }}>
+          {returnLevel.label}
+        </span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -96,7 +109,7 @@ export default function GrowthInputs({ settings, totals, averageMonthly, onChang
             label="Monthly contribution"
             prefix="$"
             value={settings.monthlyContribution}
-            onChange={(value) => onChange({ monthlyContribution: value })}
+            onChange={(monthlyContribution) => onChange({ monthlyContribution })}
           />
           <NumberField
             label="Increase per year"
@@ -117,19 +130,17 @@ export default function GrowthInputs({ settings, totals, averageMonthly, onChang
             min={-100}
             max={100}
             value={settings.contributionIncrease}
-            onChange={(value) => onChange({ contributionIncrease: value })}
+            onChange={(contributionIncrease) => onChange({ contributionIncrease })}
           />
         </div>
         {averageMonthly > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange({ monthlyContribution: averageMonthly })}
-            className="self-start text-xs underline"
-            style={{ color: "var(--color-yellow)" }}
+          <LinkButton
+            className="self-start"
             title="Average net-worth change over the last 12 months. It includes market gains."
+            onClick={() => onChange({ monthlyContribution: averageMonthly })}
           >
             Use my 12-month average: {formatWholeUSD(averageMonthly)}/mo
-          </button>
+          </LinkButton>
         )}
       </div>
     </div>

@@ -1,12 +1,6 @@
-import { ProjectionInputs } from "../../../lib/utils/projection";
+import { AccountTotals } from "../../../lib/utils/netWorth";
 
-export type StartSource = "netWorth" | "investments" | "cash";
-
-export interface StartingTotals {
-  netWorth: number;
-  investments: number;
-  cash: number;
-}
+export type StartSource = keyof AccountTotals;
 
 export interface GrowthSettings {
   startSource: StartSource;
@@ -25,7 +19,7 @@ export const START_SOURCE_LABELS: Record<StartSource, string> = {
 
 export const MAX_YEARS = 60;
 
-export function defaultGrowthSettings(totals: StartingTotals): GrowthSettings {
+export function defaultGrowthSettings(totals: AccountTotals): GrowthSettings {
   return {
     startSource: totals.investments > 0 ? "investments" : "netWorth",
     startOverride: null,
@@ -33,19 +27,5 @@ export function defaultGrowthSettings(totals: StartingTotals): GrowthSettings {
     contributionIncrease: 0,
     annualReturn: 7,
     years: 10,
-  };
-}
-
-export function startingAmount(settings: GrowthSettings, totals: StartingTotals): number {
-  return Math.round(settings.startOverride ?? totals[settings.startSource]);
-}
-
-export function growthInputs(settings: GrowthSettings, totals: StartingTotals): ProjectionInputs {
-  return {
-    start: startingAmount(settings, totals),
-    monthlyContribution: settings.monthlyContribution,
-    contributionIncrease: settings.contributionIncrease,
-    annualReturn: settings.annualReturn,
-    years: settings.years,
   };
 }

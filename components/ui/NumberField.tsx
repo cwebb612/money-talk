@@ -1,7 +1,8 @@
 "use client";
 
 import { ReactNode, useId, useState } from "react";
-import { formatNumeric, parseNumeric } from "../../../lib/utils/money";
+import { formatNumeric, parseNumeric } from "../../lib/utils/money";
+import { clamp } from "../../lib/utils/math";
 
 interface Props {
   label: string;
@@ -17,14 +18,10 @@ interface Props {
   info?: ReactNode;
 }
 
-function clamp(value: number, min?: number, max?: number): number {
-  if (min !== undefined && value < min) return min;
-  if (max !== undefined && value > max) return max;
-  return value;
-}
-
 export default function NumberField(props: Props) {
-  const { label, value, onChange, prefix, suffix, min, max, integer, inline, slider, info } = props;
+  const { label, value, onChange, prefix, suffix, integer, inline, slider, info } = props;
+  const min = props.min ?? slider?.min;
+  const max = props.max ?? slider?.max;
   const id = useId();
   const [draft, setDraft] = useState<string | null>(null);
 

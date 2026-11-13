@@ -82,3 +82,19 @@ export function buildAssetLiabilitySeries(
 
   return series;
 }
+
+export interface AccountTotals {
+  netWorth: number;
+  investments: number;
+  cash: number;
+}
+
+export function currentTotals(accounts: Array<{ type: string; currentValue?: number }>): AccountTotals {
+  const byType: Record<string, number> = { cash: 0, investment: 0, liability: 0 };
+  for (const account of accounts) byType[account.type] += account.currentValue ?? 0;
+  return {
+    netWorth: byType.cash + byType.investment - byType.liability,
+    investments: byType.investment,
+    cash: byType.cash,
+  };
+}

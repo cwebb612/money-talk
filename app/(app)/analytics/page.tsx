@@ -7,7 +7,7 @@ import TrendsCard from "../../../components/analytics/TrendsCard";
 import GrowthCalculatorCard from "../../../components/analytics/growth/GrowthCalculatorCard";
 import MonthlyChangeCard from "../../../components/analytics/MonthlyChangeCard";
 import AssetsLiabilitiesCard from "../../../components/analytics/AssetsLiabilitiesCard";
-import { buildNetWorthSeries, buildAssetLiabilitySeries } from "../../../lib/utils/netWorth";
+import { buildNetWorthSeries, buildAssetLiabilitySeries, currentTotals } from "../../../lib/utils/netWorth";
 import { PageContainer, DashboardGrid, GridModule } from "../../../components/ui/DashboardGrid";
 
 async function getAnalyticsData() {
@@ -35,13 +35,7 @@ async function getAnalyticsData() {
     history: accountHistoryMap.get(a._id.toString()) ?? [],
   }));
 
-  const sumOfType = (type: string) =>
-    accounts.filter((a) => a.type === type).reduce((sum, a) => sum + (a.currentValue ?? 0), 0);
-  const investments = sumOfType("investment");
-  const cash = sumOfType("cash");
-  const totals = { netWorth: investments + cash - sumOfType("liability"), investments, cash };
-
-  return { chartData, accountData, assetLiabilitySeries, totals };
+  return { chartData, accountData, assetLiabilitySeries, totals: currentTotals(accounts) };
 }
 
 export default async function AnalyticsPage() {

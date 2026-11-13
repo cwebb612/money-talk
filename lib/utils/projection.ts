@@ -1,4 +1,5 @@
 import { DatedValue, dateToTimestamp } from "./monthWindow";
+import { clamp } from "./math";
 
 export interface ProjectionInputs {
   start: number;
@@ -14,9 +15,9 @@ export interface ProjectionPoint {
   contributed: number;
 }
 
-export interface ProjectionSummary {
-  finalBalance: number;
-  contributed: number;
+export interface BalanceSplit {
+  principal: number;
+  contributions: number;
   growth: number;
 }
 
@@ -47,13 +48,10 @@ export function projectGrowth(inputs: ProjectionInputs): ProjectionPoint[] {
   return points;
 }
 
-export function summarizeProjection(start: number, points: ProjectionPoint[]): ProjectionSummary {
-  const last = points[points.length - 1];
-  return {
-    finalBalance: last.balance,
-    contributed: last.contributed,
-    growth: last.balance - start - last.contributed,
-  };
+export function splitBalance(point: ProjectionPoint, start: number): BalanceSplit {
+  const principal = clamp(point.balance, 0, Math.max(start, 0));
+  const contributions = clamp(point.balance - principal, 0, point.contributed);
+  return { principal, contributions, growth: Math.max(0, point.balance - principal - contributions) };
 }
 
 export function averageMonthlyChange(sortedData: DatedValue[], now: number): number {
@@ -66,9 +64,4 @@ export function averageMonthlyChange(sortedData: DatedValue[], now: number): num
   const days = (dateToTimestamp(last.date) - dateToTimestamp(first.date)) / MS_PER_DAY;
   if (days < 1) return 0;
   return Math.round(((last.value - first.value) / days) * (DAYS_PER_YEAR / 12));
-}
-
-export function addMonths(ts: number, months: number): number {
-  const d = new Date(ts);
-  return new Date(d.getFullYear(), d.getMonth() + months, 1).getTime();
 }

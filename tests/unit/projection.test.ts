@@ -1,4 +1,4 @@
-import { ProjectionInputs, averageMonthlyChange, projectGrowth, summarizeProjection } from "../../lib/utils/projection";
+import { ProjectionInputs, averageMonthlyChange, projectGrowth, splitBalance } from "../../lib/utils/projection";
 
 const base: ProjectionInputs = {
   start: 10000,
@@ -50,13 +50,37 @@ describe("projectGrowth", () => {
   });
 });
 
-describe("summarizeProjection", () => {
-  it("splits the final balance into start, contributions and growth", () => {
-    const inputs = { ...base, monthlyContribution: 100, annualReturn: 5, years: 3 };
-    const summary = summarizeProjection(inputs.start, projectGrowth(inputs));
-    expect(summary.contributed).toBe(3600);
-    expect(summary.growth).toBeGreaterThan(0);
-    expect(summary.finalBalance).toBeCloseTo(inputs.start + summary.contributed + summary.growth, 6);
+describe("splitBalance", () => {
+  it("splits a growing balance into start, contributions and growth", () => {
+    expect(splitBalance({ month: 12, balance: 13000, contributed: 1200 }, 10000)).toEqual({
+      principal: 10000,
+      contributions: 1200,
+      growth: 1800,
+    });
+  });
+
+  it("takes losses out of contributions before the starting amount", () => {
+    expect(splitBalance({ month: 12, balance: 10600, contributed: 1200 }, 10000)).toEqual({
+      principal: 10000,
+      contributions: 600,
+      growth: 0,
+    });
+  });
+
+  it("shows no principal when the starting amount is negative", () => {
+    expect(splitBalance({ month: 12, balance: 500, contributed: 1200 }, -700)).toEqual({
+      principal: 0,
+      contributions: 500,
+      growth: 0,
+    });
+  });
+
+  it("shows nothing when the balance is negative", () => {
+    expect(splitBalance({ month: 0, balance: -700, contributed: 0 }, -700)).toEqual({
+      principal: 0,
+      contributions: 0,
+      growth: 0,
+    });
   });
 });
 

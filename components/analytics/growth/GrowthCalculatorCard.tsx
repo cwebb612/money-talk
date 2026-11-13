@@ -4,72 +4,61 @@ import { useMemo, useState } from "react";
 import AnalyticsCard from "../AnalyticsCard";
 import StatGrid from "../StatGrid";
 import GrowthInputs from "./GrowthInputs";
-import GrowthChart, { GROWTH_LAYERS, GrowthChartPoint } from "./GrowthChart";
-import { changeColor, formatMonthYear, formatWholeUSD } from "../chartFormat";
-import { today } from "../../../lib/utils/monthWindow";
-import { ProjectionPoint, addMonths, averageMonthlyChange, projectGrowth, summarizeProjection } from "../../../lib/utils/projection";
-import { GrowthSettings, StartingTotals, defaultGrowthSettings, growthInputs } from "./settings";
+import GrowthChart from "./GrowthChart";
+import { changeColor, formatMonthYear } from "../chartFormat";
+import { formatWholeUSD } from "../../../lib/utils/money";
+import { AccountTotals } from "../../../lib/utils/netWorth";
+import { DatedValue, addMonths, today } from "../../../lib/utils/monthWindow";
+import { averageMonthlyChange, projectGrowth, splitBalance } from "../../../lib/utils/projection";
+import { GrowthSettings, defaultGrowthSettings } from "./settings";
+
+const YEARLY_CHART_AFTER_YEARS = 10;
 
 interface Props {
-  chartData: { date: string; value: number }[];
-  totals: StartingTotals;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
-
-function toChartPoint(point: ProjectionPoint, start: number, todayTs: number): GrowthChartPoint {
-  const principal = clamp(point.balance, 0, Math.max(start, 0));
-  const contributions = clamp(point.balance - principal, 0, point.contributed);
-  return {
-    timestamp: addMonths(todayTs, point.month),
-    balance: point.balance,
-    principal,
-    contributions,
-    growth: Math.max(0, point.balance - principal - contributions),
-  };
+  chartData: DatedValue[];
+  totals: AccountTotals;
 }
 
 export default function GrowthCalculatorCard({ chartData, totals }: Props) {
   const [settings, setSettings] = useState<GrowthSettings>(() => defaultGrowthSettings(totals));
   const todayTs = today();
   const averageMonthly = useMemo(() => averageMonthlyChange(chartData, todayTs), [chartData, todayTs]);
-  const onChange = (patch: Partial<GrowthSettings>) => setSettings((s) => ({ ...s, ...patch }));
+  const start = Math.round(settings.startOverride ?? totals[settings.startSource]);
 
-  const result = useMemo(() => {
-    const inputs = growthInputs(settings, totals);
-    const points = projectGrowth(inputs);
+  const { last, chartPoints } = useMemo(() => {
+    const points = projectGrowth({ ...settings, start });
+    const monthsPerPoint = settings.years > YEARLY_CHART_AFTER_YEARS ? 12 : 1;
     return {
-      summary: summarizeProjection(inputs.start, points),
-      chartPoints: points.map((p) => toChartPoint(p, inputs.start, todayTs)),
+      last: points[points.length - 1],
+      chartPoints: points
+        .filter((p) => p.month % monthsPerPoint === 0)
+        .map((p) => ({ timestamp: addMonths(todayTs, p.month), balance: p.balance, ...splitBalance(p, start) })),
     };
-  }, [settings, totals, todayTs]);
+  }, [settings, start, todayTs]);
 
+  const growth = last.balance - start - last.contributed;
   const endLabel = formatMonthYear(addMonths(todayTs, settings.years * 12));
 
   return (
     <AnalyticsCard title="Growth Calculator">
-      <GrowthInputs settings={settings} totals={totals} averageMonthly={averageMonthly} onChange={onChange} />
+      <GrowthInputs
+        settings={settings}
+        start={start}
+        totals={totals}
+        averageMonthly={averageMonthly}
+        onChange={(patch) => setSettings((s) => ({ ...s, ...patch }))}
+      />
 
       <div className="mt-4">
-        <GrowthChart data={result.chartPoints} />
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style={{ color: "var(--color-muted)" }}>
-        {GROWTH_LAYERS.map((layer) => (
-          <span key={layer.key} className="flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: layer.color }} />
-            {layer.label}
-          </span>
-        ))}
+        <GrowthChart data={chartPoints} />
       </div>
 
       <StatGrid
         minColumnWidth={120}
         stats={[
-          { label: `Value in ${endLabel}`, value: formatWholeUSD(result.summary.finalBalance), color: "var(--color-yellow)" },
-          { label: "Contributed", value: formatWholeUSD(result.summary.contributed), color: "var(--color-text)" },
-          { label: "Growth earned", value: formatWholeUSD(result.summary.growth), color: changeColor(result.summary.growth) },
+          { label: `Value in ${endLabel}`, value: formatWholeUSD(last.balance), color: "var(--color-yellow)" },
+          { label: "Contributed", value: formatWholeUSD(last.contributed), color: "var(--color-text)" },
+          { label: "Growth earned", value: formatWholeUSD(growth), color: changeColor(growth) },
         ]}
       />
     </AnalyticsCard>
