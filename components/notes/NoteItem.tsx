@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import NoteForm from "./NoteForm";
+import NoteForm, { NoteAccountOption } from "./NoteForm";
 import { deleteNote, updateNote } from "./noteApi";
 import { NoteDTO, formatNoteDate } from "../../lib/utils/notes";
 
@@ -10,9 +10,10 @@ interface NoteItemProps {
   note: NoteDTO;
   onChanged: () => void;
   showAccount?: boolean;
+  accounts?: NoteAccountOption[];
 }
 
-export default function NoteItem({ note, onChanged, showAccount = true }: NoteItemProps) {
+export default function NoteItem({ note, onChanged, showAccount = true, accounts }: NoteItemProps) {
   const [editing, setEditing] = useState(false);
 
   const meta = [
@@ -25,7 +26,8 @@ export default function NoteItem({ note, onChanged, showAccount = true }: NoteIt
     return (
       <div className="py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
         <NoteForm
-          initial={{ body: note.body, date: note.date }}
+          initial={{ body: note.body, date: note.date, accountId: note.accountId }}
+          accounts={accounts}
           autoFocus
           onSubmit={async (values) => {
             await updateNote(note._id, values);

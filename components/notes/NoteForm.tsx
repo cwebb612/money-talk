@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { Trash2 } from "lucide-react";
 import Button from "../ui/Button";
 import Popconfirm from "../ui/Popconfirm";
 import Select from "../ui/Select";
@@ -101,11 +102,11 @@ export default function NoteForm({
         aria-label="Note"
         autoFocus={autoFocus}
         rows={3}
+        className="outline-none border border-[var(--color-border)] focus:border-[var(--color-blue)] transition-colors"
         style={{
           width: "100%",
           padding: "8px 12px",
           borderRadius: 8,
-          border: "1px solid var(--color-border)",
           backgroundColor: "var(--color-bg)",
           color: "var(--color-text)",
           fontSize: "0.875rem",
@@ -199,7 +200,12 @@ export default function NoteForm({
         {onDelete && (
           <div className="ml-auto">
             <Popconfirm title="Delete this note?" onConfirm={onDelete}>
-              <button type="button" className="text-xs" style={{ color: "#ef4444" }}>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors hover:bg-red-500/10"
+                style={{ border: "1px solid #ef4444", color: "#ef4444" }}
+              >
+                <Trash2 size={14} />
                 Delete
               </button>
             </Popconfirm>

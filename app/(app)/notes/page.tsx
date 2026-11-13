@@ -98,7 +98,7 @@ export default function NotesPage() {
           ) : (
             <div className="px-4 -mb-px">
               {feed.map((note) => (
-                <NoteItem key={note._id} note={note} onChanged={fetchNotes} />
+                <NoteItem key={note._id} note={note} onChanged={fetchNotes} accounts={accounts} />
               ))}
             </div>
           )}

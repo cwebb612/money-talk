@@ -23,7 +23,7 @@ export async function createNote(input: NoteInput): Promise<NoteDTO> {
   return (await send("/api/notes", "POST", input)).json();
 }
 
-export async function updateNote(id: string, input: Omit<NoteInput, "accountId">): Promise<NoteDTO> {
+export async function updateNote(id: string, input: NoteInput): Promise<NoteDTO> {
   return (await send(`/api/notes/${id}`, "PATCH", input)).json();
 }
 

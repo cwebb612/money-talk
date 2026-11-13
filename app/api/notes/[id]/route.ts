@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import { verifyToken } from "../../../../lib/auth/session";
 import connect from "../../../../lib/db/mongodb";
 import Note from "../../../../lib/db/models/note";
+import Account from "../../../../lib/db/models/account";
 import { findNoteById } from "../../../../lib/db/noteQueries";
 import { isValidNoteDate, validateNoteBody } from "../../../../lib/utils/notes";
 
@@ -39,8 +40,14 @@ export async function PATCH(
   const note = await Note.findById(id);
   if (!note) return NextResponse.json({ error: "Note not found" }, { status: 404 });
 
+  if (body.accountId != null) {
+    const exists = Types.ObjectId.isValid(body.accountId) && (await Account.exists({ _id: body.accountId }));
+    if (!exists) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  }
+
   if (body.body !== undefined) note.body = body.body.trim();
   if (body.date !== undefined) note.date = body.date;
+  if (body.accountId !== undefined) note.accountId = body.accountId ? new Types.ObjectId(body.accountId) : null;
   await note.save();
 
   return NextResponse.json(await findNoteById(id));
